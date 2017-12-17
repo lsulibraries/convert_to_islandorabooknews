@@ -1,0 +1,47 @@
+Building the docker image
+
+# make a Dockerfile
+# you are root inside docker, so no sudo ....
+git clone 'docker ubuntu 14.04 image plus apt install imagemagick terreract-ocr'
+
+# from within the directory with the Dockerfile
+docker build  .
+
+# To make a container from an image (adding a bound folder to the container)
+# You can make several containers of an image, for parallel tasks
+docker run -it -v {local_folder}:{name_for_folder_inside_container} {name_of_image}
+docker run -it -v /home/francis/Desktop/DockerForDerivRegen/shared:/home/docker/share 21984656ae58
+
+# To stop the container
+exit
+
+# to show what containers you have built.  they will have a nickname on the right for referencing them later.
+docker ps -a 
+
+# to see what images you've downloaded
+docker images -a
+
+# images keep the settings for shared folders, installed packages, etc.
+# -i says you want a terminal open to item
+docker start -i {image nickname}
+
+
+Starting a container of an image
+
+# you can start up multiple containers of the same image by:
+docker run -it -v {image_nickname}
+
+
+Starting scripts
+
+# python virtualenvironments are always recommended
+cd /home/docker/share
+python3 -m venv python3venv
+. python3venv/bin/activate
+# if you want an interactive python shell
+python
+# or if you want to run a python script
+python {name of file.py}
+
+
+Copy your Book source folder into the docker-shared folder
