@@ -46,8 +46,8 @@ def find_all_filetype(directory, filetype):
     return all_pdfs
 
 
-all_pdf_files = find_all_filetype('/home/docker/share/examples/source_collection_folders/sugarbulletin_sample_pdf', '.pdf')
-all_mods_files = find_all_filetype('/home/docker/share/examples/source_collection_folders/sugarbulletin_sample_pdf', '.xml')
+all_pdf_files = find_all_filetype('/home/docker/share/sugarbulletin_sample_pdf/', '.pdf')
+all_mods_files = find_all_filetype('/home/docker/share/sugarbulletin_sample_pdf/', '.xml')
 
 
 for filepath in all_pdf_files:
@@ -58,7 +58,7 @@ for filepath in all_mods_files:
     move_mods_files(filepath)
 
 
-all_tiff_files = find_all_filetype('/home/docker/share/examples/source_collection_folders/sugarbulletin_sample_pdf', '.tif')
+all_tiff_files = find_all_filetype('/home/docker/share/sugarbulletin_sample_pdf/', '.tif')
 
 
 for filepath in all_tiff_files:

@@ -141,5 +141,5 @@ for root, dirs, files in sorted(os.walk(collection_path)):
         make_JP2(root)
         make_fits(root, fits_path)
 for root, dirs, files in sorted(os.walk(collection_path)):
-    if os.path.split(root)[1].isnumeric():
+    if os.path.split(os.path.split(root)[0])[1].isnumeric():
         shrink_JPG(root)
