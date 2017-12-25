@@ -123,10 +123,8 @@ def rename_folders_move_files(source_dir, output_dir):
 
 
 if __name__ == '__main__':
-    # source_dir = input('what folder are the compound jp2s in? ')
-    # output_dir = input('what folder would you like the output in? ')
-    source_dir = '/home/francis/Desktop/DerivRegenDocker/examples/source_collection_folders/AWW-jp2cpd/hnoc-aww-cpd'
-    output_dir = '/home/francis/Desktop/DerivRegenDocker/examples/source_collection_folders/AWW-jp2cpd/hnoc-aww-book'
+    source_dir = input('what folder are the compound jp2s in? (source_folder) ')
+    output_dir = input('what folder would you like the output in? (dest_folder) ')
     update_structure_files(source_dir)
     rename_folders_move_files(source_dir, output_dir)
     # convert_a_book_jp2_collection(output_dir)
