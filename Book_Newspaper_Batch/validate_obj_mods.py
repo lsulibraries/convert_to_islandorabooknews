@@ -18,16 +18,16 @@ def sort_child_folders_by_contents(children_folders):
 
 
 def fix_bad_characters(path):
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding='utf-8') as f:
         text = f.read().encode('utf-8')
     if b'\xc2\xa0' in text:
         text = text.replace(b'\xc2\xa0', b'\x20')
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(text.decode('utf-8'))
 
 
 def validate_text_file(path):
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding='utf-8') as f:
         text = f.read()
         for num, char in enumerate(text):
             if not char.replace('\b', '').replace('\n', '').replace('\t', '').strip().isprintable():
@@ -38,15 +38,15 @@ def validate_text_file(path):
 def validate_image(path):
     with Image.open(path) as im:
         if im.format not in ('JPEG2000', 'JPEG'):
-            print(path, im.format)
+            print(path, im.format, 'format')
             return False
         if im.format == 'JPEG2000':
             jpylyzed = jpylyzer.checkOneFile(path)
             if not jpylyzed.findtext('isValidJP2'):
                 print(path, 'is not valid')
                 return False
-        if im.mode not in ('RGB', ):
-            print(path, im.mode)
+        if im.mode not in ('RGB', 'RGBA', 'L'):
+            print(path, im.mode, 'mode')
             return False
     with Image.open(path) as im:
         im.verify()
@@ -57,6 +57,8 @@ def validate_or_repair_or_complain_text_file(root):
     text_types = ['HOCR.html', 'MODS.xml', 'OCR.txt']
     for text_type in text_types:
         path = os.path.join(root, text_type)
+        if not os.path.isfile(path):
+            continue
         if not validate_text_file(path):
             fix_bad_characters(path)
             if not validate_text_file(path):
@@ -67,6 +69,8 @@ def validate_or_complain_image_files(root):
     image_types = ['JP2.jp2', 'JPG.jpg', 'OBJ.jp2', 'TN.jpg']
     for image_type in image_types:
         path = os.path.join(root, image_type)
+        if not os.path.isfile(path):
+            continue
         if not validate_image(path):
             print(path, 'is not a valid image')
 
