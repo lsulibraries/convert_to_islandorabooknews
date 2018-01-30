@@ -9,6 +9,8 @@ import sys
 def split_pdf_to_jp2s(pdf_file, output_root):
     root, filename = os.path.split(pdf_file)
     dest_root = os.path.join(output_root, os.path.splitext(filename)[0])
+    if os.path.isdir(dest_root):
+        return
     os.makedirs(dest_root, exist_ok=True)
     subprocess.call(['convert',
                      '-density',
@@ -27,6 +29,7 @@ def move_jp2s_to_subfolders(filepath):
     prefix, extension = os.path.splitext(filename)
     prefix_plus_one = str(int(prefix) + 1)
     dest_filepath = os.path.join(root, prefix_plus_one)
+    print(filepath, dest_filepath)
     os.makedirs(dest_filepath, exist_ok=True)
     shutil.move(filepath, os.path.join(dest_filepath, 'OBJ.jp2'))
 
@@ -82,6 +85,7 @@ if __name__ == '__main__':
                        if os.path.splitext(i)[1] == '.pdf']
 
     for filepath in sorted(all_source_pdfs):
+        print(os.path.split(filepath))
         split_pdf_to_jp2s(filepath, output_root)
 
     all_source_mods = [os.path.join(source_root, i)
@@ -92,6 +96,7 @@ if __name__ == '__main__':
         move_mods_files(filepath, output_root)
 
     all_output_jp2s = find_all_jp2s(output_root)
+    print(len(all_output_jp2s))
 
     for filepath in sorted(all_output_jp2s):
         move_jp2s_to_subfolders(filepath)

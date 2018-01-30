@@ -3,6 +3,7 @@
 # Only works if imagemagick + jp2 delegates are active on the linux machine
 
 import os
+import sys
 import shutil
 # import subprocess
 from lxml import etree as ET
@@ -123,8 +124,18 @@ def rename_folders_move_files(source_dir, output_dir):
 
 
 if __name__ == '__main__':
-    source_dir = input('what folder are the compound jp2s in? (source_folder) ')
-    output_dir = input('what folder would you like the output in? (dest_folder) ')
-    update_structure_files(source_dir)
-    rename_folders_move_files(source_dir, output_dir)
+    try:
+        source_path = sys.argv[1]
+    except IndexError:
+        print('')
+        print('Change to: "python convertJp2CpdToBook.py {{path_to_folder}}"')
+        print('')
+        exit()
+    if '-cpd' in source_path:
+        output_path = source_path.replace('-cpd', '-book')
+    else:
+        print('Expected a inst-namespace-cpd/ folder name')
+        print('No files processed')
+    update_structure_files(source_path)
+    rename_folders_move_files(source_path, output_path)
     # convert_a_book_jp2_collection(output_dir)

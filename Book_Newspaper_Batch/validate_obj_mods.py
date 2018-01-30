@@ -1,7 +1,19 @@
 import os
 import sys
+import subprocess
+
 from jpylyzer import jpylyzer
 from PIL import Image
+from lxml import etree as ET
+
+
+def find_mods_schema():
+    sysout = subprocess.getoutput('find / -name mods-3-6.xsd')
+    programs_list = [i for i in sysout.split('\n')]
+    if not programs_list:
+        print('mods-3-6.xsd needs to be downloaded')
+        exit()
+    return programs_list[0]
 
 
 def sort_child_folders_by_contents(children_folders):
@@ -12,8 +24,6 @@ def sort_child_folders_by_contents(children_folders):
             this_dict[sorted_files].append(child_folder)
         else:
             this_dict[sorted_files] = [child_folder, ]
-    for k, v in this_dict.items():
-        print(k, len(v))
     return this_dict
 
 
@@ -53,7 +63,15 @@ def validate_image(path):
     return True
 
 
-def validate_or_repair_or_complain_text_file(root):
+def validate_mods(mods_filepath, MODS_SCHEMA):
+    file_etree = ET.parse(mods_filepath)
+    if not MODS_SCHEMA.validate(file_etree):
+        print("{} post-xsl did not validate!!!!".format(mods_filepath))
+        return False
+    return True
+
+
+def validate_or_repair_or_complain_text_file(root, MODS_SCHEMA):
     text_types = ['HOCR.html', 'MODS.xml', 'OCR.txt']
     for text_type in text_types:
         path = os.path.join(root, text_type)
@@ -63,6 +81,10 @@ def validate_or_repair_or_complain_text_file(root):
             fix_bad_characters(path)
             if not validate_text_file(path):
                 print(path, 'is not a valid textfile')
+        if text_type == 'MODS.xml':
+            if not validate_mods(path, MODS_SCHEMA):
+                print('Error:', path, 'does not validate as mods!')
+                exit()
 
 
 def validate_or_complain_image_files(root):
@@ -84,10 +106,16 @@ if __name__ == '__main__':
         print('')
         exit()
 
+    mods_schema_file = find_mods_schema()
+    MODS_DEF = ET.parse(mods_schema_file)
+    MODS_SCHEMA = ET.XMLSchema(MODS_DEF)
+
     children_folders = [root for root, dirs, files in os.walk(collection_path)
                         if os.path.split(os.path.split(root)[0])[1].isnumeric()]
     derivs_dict = sort_child_folders_by_contents(children_folders)
+    for k, v in derivs_dict.items():
+        print(k, len(v))
     for k, roots in derivs_dict.items():
-        for root in roots:
-            validate_or_repair_or_complain_text_file(root)
+        for root in sorted(roots):
+            validate_or_repair_or_complain_text_file(root, MODS_SCHEMA)
             validate_or_complain_image_files(root)

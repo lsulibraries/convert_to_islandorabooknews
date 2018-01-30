@@ -18,7 +18,8 @@ cpd_counts = parse_source_folder(cpd_folder)
 book_counts = parse_source_folder(book_folder)
 
 
-print((cpd_counts.keys() - book_counts.keys()) or (book_counts.keys() - cpd_counts.keys()))
+print(cpd_counts.keys() ^ book_counts.keys())
+
 
 for k, v in cpd_counts.items():
     if book_counts[k] != v:
