@@ -132,7 +132,7 @@ if __name__ == '__main__':
         print('')
         exit()
     if '-cpd' in source_path:
-        output_path = source_path.replace('-cpd', '-book')
+        output_path = source_path.replace('-cpd', '-cpd-to-book')
     else:
         print('Expected a inst-namespace-cpd/ folder name')
         print('No files processed')
