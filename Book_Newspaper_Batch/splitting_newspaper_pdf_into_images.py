@@ -14,24 +14,55 @@ def split_pdf_to_jp2s(pdf_file, output_root):
     os.makedirs(dest_root, exist_ok=True)
     subprocess.call(['convert',
                      '-density',
-                     '300',
+                     300,
                      os.path.join(root, filename),
                      '-quality',
-                     '75',
+                     75,
                      '-colorspace',
                      'RGB',
+                     "-define numrlvls=7",
+                     "-define jp2:tilewidth=1024",
+                     "-define jp2:tileheight=1024",
+                     "-define jp2:rate=0.02348",
+                     "-define jp2:prg=rpcl",
+                     "-define jp2:mode=int",
+                     "-define jp2:prcwidth=16383",
+                     "-define jp2:prcheight=16383",
+                     "-define jp2:cblkwidth=64",
+                     "-define jp2:cblkheight=64",
+                     "-define jp2:sop",
                      os.path.join(dest_root, '%03d.jp2'),
                      ])
 
 
-def move_jp2s_to_subfolders(filepath):
+def split_pdf_to_tiff(pdf_file, output_root,):
+    root, filename = os.path.split(pdf_file)
+    dest_root = os.path.join(output_root, os.path.splitext(filename)[0])
+    os.makedirs(dest_root, exist_ok=True)
+    subprocess.call(['convert',
+                     # '-size',
+                     # '563x779',
+                     '-density',
+                     '300',
+                     os.path.join(root, filename),
+                     '-depth',
+                     '8',
+                     '-resize',
+                     '24%',
+                     # '-compress',
+                     # 'jpeg',
+                     os.path.join(dest_root, '%03d.tif')
+                     ])
+
+
+def move_images_to_subfolders(filepath, output_filetype):
     root, filename = os.path.split(filepath)
     prefix, extension = os.path.splitext(filename)
     prefix_plus_one = str(int(prefix) + 1)
     dest_filepath = os.path.join(root, prefix_plus_one)
     print(filepath, dest_filepath)
     os.makedirs(dest_filepath, exist_ok=True)
-    shutil.move(filepath, os.path.join(dest_filepath, 'OBJ.jp2'))
+    shutil.move(filepath, os.path.join(dest_filepath, 'OBJ.{}'.format(output_filetype)))
 
 
 def move_mods_files(source_filepath, output_root):
@@ -39,12 +70,11 @@ def move_mods_files(source_filepath, output_root):
     dest_root = os.path.join(output_root, os.path.splitext(filename)[0])
     os.makedirs(dest_root, exist_ok=True)
     dest_filepath = os.path.join(dest_root, 'MODS.xml')
-    print(source_filepath, dest_filepath)
     shutil.copy2(source_filepath, dest_filepath)
 
 
-def find_all_jp2s(output_root):
-    all_output_jp2s = []
+def find_all_jp2s(output_root, output_filetype):
+    all_output_images = []
     for parent_folder in os.listdir(output_root):
         parent_path = os.path.join(output_root, parent_folder)
         if not os.path.isdir(parent_path):
@@ -53,9 +83,9 @@ def find_all_jp2s(output_root):
             child_filepath = os.path.join(parent_path, file)
             if not os.path.isfile(child_filepath):
                 continue
-            if os.path.splitext(child_filepath)[1] == '.jp2':
-                all_output_jp2s.append(child_filepath)
-    return all_output_jp2s
+            if os.path.splitext(child_filepath)[1] == '.{}'.format(output_filetype):
+                all_output_images.append(child_filepath)
+    return all_output_images
 
 
 def move_pdfs_to_subfolders(source_filepath, output_root):
@@ -70,9 +100,9 @@ def move_pdfs_to_subfolders(source_filepath, output_root):
 if __name__ == '__main__':
 
     try:
-        source_root = sys.argv[1]
+        source_root, output_filetype = sys.argv[1], sys.argv[2]
     except IndexError:
-        print('\nChange to: "python splitting_newspaper_pdf_into_jp2.py $path/to/source_pdf_folder"\n')
+        print('\nChange to: "python splitting_newspaper_pdf_into_jp2.py $path/to/source_pdf_folder {{tif or jp2}}"\n')
         quit()
 
     source_root = os.path.realpath(source_root)
@@ -86,7 +116,10 @@ if __name__ == '__main__':
 
     for filepath in sorted(all_source_pdfs):
         print(os.path.split(filepath))
-        split_pdf_to_jp2s(filepath, output_root)
+        if output_filetype == 'jp2':
+            split_pdf_to_jp2s(filepath, output_root)
+        elif output_filetype == 'tif':
+            split_pdf_to_tiff(filepath, output_root)
 
     all_source_mods = [os.path.join(source_root, i)
                        for i in os.listdir(source_root)
@@ -95,11 +128,11 @@ if __name__ == '__main__':
     for filepath in sorted(all_source_mods):
         move_mods_files(filepath, output_root)
 
-    all_output_jp2s = find_all_jp2s(output_root)
-    print(len(all_output_jp2s))
+    all_output_images = find_all_jp2s(output_root, output_filetype)
+    print(len(all_output_images))
 
-    for filepath in sorted(all_output_jp2s):
-        move_jp2s_to_subfolders(filepath)
+    for filepath in sorted(all_output_images):
+        move_images_to_subfolders(filepath, output_filetype)
 
     for filepath in sorted(all_source_pdfs):
         print(filepath)

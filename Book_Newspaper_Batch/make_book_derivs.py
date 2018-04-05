@@ -139,7 +139,7 @@ if __name__ == '__main__':
         collection_path = sys.argv[1]
     except IndexError:
         print('')
-        print('Change to: "python make_book_derivs.py {{path_to_folder}}"')
+        print('Change to: "python make_book_derivs.py {{ path_to_folder }}"')
         print('')
         exit()
     fits_path = find_fits_package()
