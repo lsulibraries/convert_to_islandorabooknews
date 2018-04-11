@@ -39,20 +39,21 @@ def split_pdf_to_tiff(pdf_file, output_root,):
     root, filename = os.path.split(pdf_file)
     dest_root = os.path.join(output_root, os.path.splitext(filename)[0])
     os.makedirs(dest_root, exist_ok=True)
-    subprocess.call(['convert',
-                     # '-size',
-                     # '563x779',
-                     '-density',
-                     '300',
-                     os.path.join(root, filename),
-                     '-depth',
-                     '8',
-                     '-resize',
-                     '24%',
-                     # '-compress',
-                     # 'jpeg',
-                     os.path.join(dest_root, '%03d.tif')
-                     ])
+    arguments = ['convert',
+                 # '-size',
+                 # '563x779',
+                 '-density',
+                 '300',
+                 os.path.join(root, filename),
+                 '-depth',
+                 '8',
+                 # '-resize',
+                 # '24%',
+                 # '-compress',
+                 # 'jpeg',
+                 os.path.join(dest_root, '%03d.tif')
+                 ]
+    subprocess.call(arguments)
 
 
 def move_images_to_subfolders(filepath, output_filetype):
@@ -73,7 +74,7 @@ def move_mods_files(source_filepath, output_root):
     shutil.copy2(source_filepath, dest_filepath)
 
 
-def find_all_jp2s(output_root, output_filetype):
+def find_all_images(output_root, output_filetype):
     all_output_images = []
     for parent_folder in os.listdir(output_root):
         parent_path = os.path.join(output_root, parent_folder)
@@ -124,13 +125,10 @@ if __name__ == '__main__':
     all_source_mods = [os.path.join(source_root, i)
                        for i in os.listdir(source_root)
                        if os.path.splitext(i)[1] == '.xml']
-
     for filepath in sorted(all_source_mods):
         move_mods_files(filepath, output_root)
 
-    all_output_images = find_all_jp2s(output_root, output_filetype)
-    print(len(all_output_images))
-
+    all_output_images = find_all_images(output_root, output_filetype)
     for filepath in sorted(all_output_images):
         move_images_to_subfolders(filepath, output_filetype)
 
