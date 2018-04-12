@@ -5,6 +5,7 @@ import subprocess
 import shutil
 import sys
 
+import make_book_derivs
 
 def split_pdf_to_tiff(pointer, source_root, output_root):
     filename = '{}.pdf'.format(pointer)
@@ -119,9 +120,11 @@ def main(source_root, output_filetype):
     os.makedirs(output_root, exist_ok=True)
 
     pointers = {os.path.splitext(i)[0] for i in os.listdir(source_root)}
+    fits_path = make_book_derivs.find_fits_package()
     for pointer in pointers:
         convert_an_item(pointer, source_root, output_filetype, output_root)
-        break    
+        parent_root = os.path.join(output_root, pointer)
+        make_book_derivs.do_child_level(parent_root, fits_path)
 
 
 if __name__ == '__main__':
