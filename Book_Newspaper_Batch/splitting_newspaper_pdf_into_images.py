@@ -51,7 +51,7 @@ def split_pdf_to_tiff(pdf_file, output_root,):
                  # '24%',
                  # '-compress',
                  # 'jpeg',
-                 os.path.join(dest_root, '%03d.tif')
+                 os.path.join(dest_root, '%04d.tif')
                  ]
     subprocess.call(arguments)
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     try:
         source_root, output_filetype = sys.argv[1], sys.argv[2]
     except IndexError:
-        print('\nChange to: "python splitting_newspaper_pdf_into_jp2.py $path/to/source_pdf_folder {{tif or jp2}}"\n')
+        print('\nChange to: "python splitting_newspaper_pdf_into_images.py $path/to/source_pdf_folder {{tif or jp2}}"\n')
         quit()
 
     source_root = os.path.realpath(source_root)

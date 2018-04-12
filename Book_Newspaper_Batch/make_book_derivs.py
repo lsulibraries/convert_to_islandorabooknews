@@ -130,7 +130,7 @@ def convert_tiff_to_jp2_kakadu(folder, input_path):
 def replace_obj_with_jp2(folder, old_object_file):
     jp2_file = os.path.join(folder, 'JP2.jp2')
     new_object_file = os.path.join(folder, 'OBJ.jp2')
-    os.remove(old_object_file)
+    # os.remove(old_object_file)
     shutil.copy2(jp2_file, new_object_file)
 
 

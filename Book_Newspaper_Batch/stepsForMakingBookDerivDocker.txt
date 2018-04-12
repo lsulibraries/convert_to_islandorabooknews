@@ -32,16 +32,44 @@ Starting a container of an image
 docker run -it -v {image_nickname}
 
 
+Loading software into container:
+	- Container remembers install programs, settings, etc on restart
+	- Only have to install programs once.
+
+apt install wget zip software-properties-common python-software-properties -y
+add-apt-repository ppa:deadsnakes/ppa
+apt update
+apt install python3.6-dev libopenjpeg2* imagemagick -y
+
 Starting scripts
 
 # python virtualenvironments are always recommended
+
 cd /home/docker/share
 python3 -m venv python3venv
 . python3venv/bin/activate
-# if you want an interactive python shell
-python
+
 # or if you want to run a python script
 python {name of file.py}
 
 
 Copy your Book source folder into the docker-shared folder
+
+
+Install kakadu:
+
+	cd /usr/local/lib
+
+	sudo wget https://github.com/sul-dlss/Djatoka/raw/master/lib/Linux-x86-32/libkdu_v60R.so
+	
+	cd /usr/local/bin
+
+	sudo wget http://kakadusoftware.com/wp-content/uploads/2014/06/KDU7A2_Demo_Apps_for_Centos7-x86-64_170827.zip
+	unzip KDU7A2_Demo_Apps_for_Centos7-x86-64_170827.zip
+	rm KDU7A2_Demo_Apps_for_Centos7-x86-64_170827.zip
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
+Install tesseract:
+	apt install autoconf libtool build-essential libpng12-dev libpng12-dev libtiff5-dev tesseract-ocr
+
+
