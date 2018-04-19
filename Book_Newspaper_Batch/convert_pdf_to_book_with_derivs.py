@@ -95,5 +95,9 @@ if __name__ == '__main__':
     except IndexError:
         print('\nChange to: "python3 convert_pdf_to_book_with_derivatives.py $path/to/source_pdf_folder"\n')
         quit()
-
-    main(source_root)
+    if '-pdf' in source_root:
+        main(source_root)
+    else:
+        print('Expected "institution-namespace-pdf" folder name')
+        print('No files processed')
+        exit()

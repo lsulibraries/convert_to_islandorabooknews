@@ -5,8 +5,10 @@
 import os
 import sys
 import shutil
-# import subprocess
+
 from lxml import etree as ET
+
+import make_book_derivs
 
 
 def update_structure_files(collection_folder):
@@ -105,37 +107,34 @@ def rename_folders_move_files(source_dir, output_dir):
     loop_through_parents(parent_orderedchildren_dict, source_dir, output_dir)
 
 
-# def convert_jp2_to_tiff(sourcefile, outputfile):
-#     subprocess.run(['convert',
-#                     sourcefile,
-#                     '-compress',
-#                     'jpeg',
-#                     outputfile])
+def make_derivatives(source_root, output_root):
+    pointers = {os.path.splitext(i)[0] for i in os.listdir(source_root)}
+    fits_path = make_book_derivs.find_fits_package()
+    for pointer in pointers:
+        parent_root = os.path.join(output_root, pointer)
+        make_book_derivs.do_child_level(parent_root, fits_path)
 
 
-# def convert_a_book_jp2_collection(filepath):
-#     for root, dirs, files in os.walk(filepath):
-#         for file in files:
-#             if 'OBJ' in file and file != 'OBJ.tif':
-#                 sourcefile = os.path.join(root, file)
-#                 outputfile = os.path.join(root, 'OBJ.tif')
-#                 convert_jp2_to_tiff(sourcefile, outputfile)
-#                 os.remove(sourcefile)
+def main(source_root):
+    source_root = os.path.realpath(source_root)
+    parent_root, source_folder = os.path.split(source_root)
+    output_root = os.path.join(parent_root, '{}-to-book'.format(source_folder))
+    update_structure_files(source_root)
+    rename_folders_move_files(source_root, output_root)
+    make_derivatives(source_root, output_root)
 
 
 if __name__ == '__main__':
     try:
-        source_path = sys.argv[1]
+        source_root = sys.argv[1]
     except IndexError:
         print('')
         print('Change to: "python convertJp2CpdToBook.py {{path_to_folder}}"')
         print('')
         exit()
-    if '-cpd' in source_path:
-        output_path = source_path.replace('-cpd', '-cpd-to-book')
+    if '-cpd' in source_root:
+        main(source_root)
     else:
-        print('Expected a inst-namespace-cpd/ folder name')
+        print('Expected "institution-namespace-cpd" folder name')
         print('No files processed')
-    update_structure_files(source_path)
-    rename_folders_move_files(source_path, output_path)
-    # convert_a_book_jp2_collection(output_dir)
+        exit()
