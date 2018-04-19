@@ -32,7 +32,6 @@ def move_images_to_subfolders(all_page_images):
         prefix, extension = os.path.splitext(filename)
         prefix_plus_one = str(int(prefix) + 1)
         dest_path = os.path.join(root, prefix_plus_one)
-        print(source_path, dest_path)
         os.makedirs(dest_path, exist_ok=True)
         shutil.move(source_path, os.path.join(dest_path, 'OBJ.tif'))
 
@@ -65,7 +64,6 @@ def move_pdfs_to_subfolders(pointer, source_root, output_root):
     dest_root = os.path.join(output_root, pointer)
     os.makedirs(dest_root, exist_ok=True)
     dest_filepath = os.path.join(dest_root, 'PDF.pdf')
-    print(source_filepath, dest_filepath)
     shutil.copy2(source_filepath, dest_filepath)
 
 
