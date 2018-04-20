@@ -134,6 +134,23 @@ def replace_obj_with_jp2(folder, old_object_file):
     shutil.copy2(jp2_file, new_object_file)
 
 
+def uncompress_jp2_to_tif(folder, object_file):
+    if os.path.isfile(object_file.replace('.jp2', '.tif')):
+        print('already a tif in folder {}'.format(object_file))
+        exit()
+    if os.path.splitext(os.path.split(object_file)[1])[1] == ".jp2":
+        output_file = object_file.replace('.jp2', '.tif')
+        arguments = ["convert",
+                     "-density",
+                     "300",
+                     object_file,
+                     '-depth',
+                     '8',
+                     output_file]
+        subprocess.call(arguments)
+        os.remove(object_file)
+
+
 def do_child_level(parent_root, fits_path):
     # Note:  tesseract uses the jpg - so we make a full quality one first,
     # then overwrite it with the correct medium size one at the end.
@@ -149,6 +166,7 @@ def do_child_level(parent_root, fits_path):
             exit()
         else:
             object_file = object_files[0]
+        uncompress_jp2_to_tif(folder, object_file)
         convert_tiff_to_jp2_kakadu(folder, object_file)
         make_JPG(folder, object_file)
         make_TN(folder, object_file)

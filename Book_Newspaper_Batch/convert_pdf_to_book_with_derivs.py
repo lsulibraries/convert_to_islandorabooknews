@@ -26,8 +26,8 @@ def split_pdf_to_tiff(pointer, source_root, output_root):
     subprocess.call(arguments)
 
 
-def move_images_to_subfolders(all_page_images):
-    for source_path in all_page_images:
+def move_images_to_subfolders(all_page_tifs):
+    for source_path in all_page_tifs:
         root, filename = os.path.split(source_path)
         prefix, extension = os.path.splitext(filename)
         prefix_plus_one = str(int(prefix) + 1)
@@ -36,7 +36,7 @@ def move_images_to_subfolders(all_page_images):
         shutil.move(source_path, os.path.join(dest_path, 'OBJ.tif'))
 
 
-def find_all_images(output_root):
+def find_all_tifs(output_root):
     all_output_images = []
     for parent_folder in os.listdir(output_root):
         parent_path = os.path.join(output_root, parent_folder)
@@ -67,12 +67,23 @@ def move_pdfs_to_subfolders(pointer, source_root, output_root):
     shutil.copy2(source_filepath, dest_filepath)
 
 
+def split_pdf_into_page_pdfs(path):
+    input_path = os.path.join(path, 'PDF.pdf')
+    arguments = ['pdftk',
+                 input_path,
+                 'burst',
+                 'output',
+                 '%d/PDF.pdf']
+    subprocess.call(arguments)
+
+
 def convert_an_item(pointer, source_root, output_root):
     split_pdf_to_tiff(pointer, source_root, output_root)
     move_mods_files(pointer, source_root, output_root)
-    all_page_images = find_all_images(output_root)
-    move_images_to_subfolders(all_page_images)
+    all_page_tifs = find_all_tifs(output_root)
+    move_images_to_subfolders(all_page_tifs)
     move_pdfs_to_subfolders(pointer, source_root, output_root)
+    split_pdf_into_page_pdfs(os.path.join(output_root, '{}.pdf'.format(pointer)))
 
 
 def main(source_root):

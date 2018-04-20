@@ -107,6 +107,21 @@ def rename_folders_move_files(source_dir, output_dir):
     loop_through_parents(parent_orderedchildren_dict, source_dir, output_dir)
 
 
+def find_all_jp2s(output_root):
+    all_output_images = []
+    for parent_folder in os.listdir(output_root):
+        parent_path = os.path.join(output_root, parent_folder)
+        if not os.path.isdir(parent_path):
+            continue
+        for file in os.listdir(parent_path):
+            child_filepath = os.path.join(parent_path, file)
+            if not os.path.isfile(child_filepath):
+                continue
+            if os.path.splitext(child_filepath)[1] == '.jp2':
+                all_output_images.append(child_filepath)
+    return all_output_images
+
+
 def make_derivatives(source_root, output_root):
     pointers = {os.path.splitext(i)[0] for i in os.listdir(source_root)}
     fits_path = make_book_derivs.find_fits_package()
