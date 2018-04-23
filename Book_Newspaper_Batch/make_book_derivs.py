@@ -6,15 +6,8 @@ import subprocess
 import shutil
 
 
-def make_JPG(path, input_path):
-    output_path = os.path.join(path, 'JPG.jpg')
-    arguments = ['convert',
-                 input_path,
-                 output_path]
-    subprocess.call(arguments)
-
-
-def shrink_JPG(path, input_path):
+def make_JPG(path):
+    input_path = os.path.join(path, 'OBJ.tif')
     output_path = os.path.join(path, 'JPG.jpg')
     arguments = ['convert',
                  '-quality',
@@ -26,7 +19,8 @@ def shrink_JPG(path, input_path):
     subprocess.call(arguments)
 
 
-def make_TN(path, input_path):
+def make_TN(path):
+    input_path = os.path.join(path, 'OBJ.tif')
     output_path = os.path.join(path, 'TN.jpg')
     arguments = ['convert',
                  input_path,
@@ -41,50 +35,45 @@ def make_TN(path, input_path):
         subprocess.call(arguments)
 
 
-def make_PDF(path, input_path):
+def shrink_PDF(path):
     input_path = os.path.join(path, 'TN.jpg')
-    output_path = os.path.join(path, 'PDF.pdf')
     short_output_path = os.path.join(path, 'PDF')
     arguments = ['tesseract',
                  input_path,
                  short_output_path,
                  'pdf']
-    if not os.path.isfile(output_path):
-        subprocess.call(arguments)
+    subprocess.call(arguments)
+
 
 def extract_text(path):
     input_path = os.path.join(path, 'PDF.pdf')
     output_path = os.path.join(path, 'OCR.txt')
-    short_output_path = os.path.join(path, 'OCR')
     arguments = ['pdf2txt',
-                 -o,
+                 '-o',
                  output_path,
                  input_path]
-    if not os.path.isfile(output_path):
-        subprocess.call(arguments)    
-
-def make_OCR(path):
-    input_path = os.path.join(path, 'JPG.jpg')
-    output_path = os.path.join(path, 'OCR.txt')
-    short_output_path = os.path.join(path, 'OCR')
-    arguments = ['tesseract',
-                 input_path,
-                 short_output_path]
     if not os.path.isfile(output_path):
         subprocess.call(arguments)
 
 
+def make_OCR(path):
+    input_path = os.path.join(path, 'PDF.pdf')
+    output_path = os.path.join(path, 'OCR.txt')
+    arguments = ['pdftotext',
+                 input_path,
+                 output_path]
+    subprocess.call(arguments)
+
+
 def make_HOCR(path):
-    input_path = os.path.join(path, 'JPG.jpg')
-    output_path = os.path.join(path, 'HOCR.html')
+    input_path = os.path.join(path, 'OBJ.tif')
     short_output_path = os.path.join(path, 'HOCR')
     arguments = ['tesseract',
                  input_path,
                  short_output_path,
                  'hocr']
-    if not os.path.isfile(output_path):
-        subprocess.call(arguments)
-        subprocess.call(['mv', os.path.join(path, 'HOCR.hocr'), os.path.join(path, 'HOCR.html')])
+    subprocess.call(arguments)
+    subprocess.call(['mv', os.path.join(path, 'HOCR.hocr'), os.path.join(path, 'HOCR.html')])
 
 
 def find_fits_package():
@@ -112,11 +101,11 @@ def make_fits(root, fits_path):
                  '-xc',
                  '-o',
                  output_path]
-    if not os.path.isfile(output_path):
-        subprocess.call(arguments)
+    subprocess.call(arguments)
 
 
-def convert_tiff_to_jp2_kakadu(folder, input_path):
+def make_JP2(folder):
+    input_path = os.path.join(folder, 'OBJ.tif')
     output_path = os.path.join(folder, 'JP2.jp2')
     arguments = ["kdu_compress",
                  "-i",
@@ -133,59 +122,31 @@ def convert_tiff_to_jp2_kakadu(folder, input_path):
                  "ORGtparts=R",
                  "Cblk={32,32}",
                  "Cuse_sop=yes"]
-    if not os.path.isfile(output_path):
-        subprocess.call(arguments)
+    subprocess.call(arguments)
 
 
-def replace_obj_with_jp2(folder, old_object_file):
+def replace_obj_with_jp2(folder):
+    orig_obj_file = os.path.join(folder, 'OBJ.tif')
     jp2_file = os.path.join(folder, 'JP2.jp2')
     new_object_file = os.path.join(folder, 'OBJ.jp2')
-    os.remove(old_object_file)
+    os.remove(orig_obj_file)
     shutil.copy2(jp2_file, new_object_file)
 
 
-def uncompress_jp2_to_tif(folder, object_file):
-    if os.path.isfile(object_file.replace('.jp2', '.tif')):
-        print('already a tif in folder {}'.format(object_file))
-        exit()
-    if os.path.splitext(os.path.split(object_file)[1])[1] == ".jp2":
-        output_file = object_file.replace('.jp2', '.tif')
-        arguments = ["convert",
-                     "-density",
-                     "300",
-                     object_file,
-                     '-depth',
-                     '8',
-                     output_file]
-        subprocess.call(arguments)
-        os.remove(object_file)
-
-
 def do_child_level(parent_root, fits_path):
-    # Note:  tesseract uses the jpg - so we make a full quality one first,
-    # then overwrite it with the correct medium size one at the end.
     child_folders = [os.path.join(parent_root, i)
                      for i in os.listdir(parent_root)
                      if os.path.isdir(os.path.join(parent_root, i))]
     for folder in sorted(child_folders):
-        object_files = [os.path.join(folder, 'OBJ.{}'.format(extension))
-                        for extension in ('tif', 'jp2')
-                        if os.path.isfile(os.path.join(folder, 'OBJ.{}'.format(extension)))]
-        if len(object_files) != 1:
-            print('Error:  Expected one OBJ file in {}.  Exiting.'.format(folder))
-            exit()
-        else:
-            object_file = object_files[0]
-        uncompress_jp2_to_tif(folder, object_file)
-        convert_tiff_to_jp2_kakadu(folder, object_file)
-        make_JPG(folder, object_file)
-        make_TN(folder, object_file)
-        make_PDF(folder, object_file)
-        make_OCR(folder)
         make_HOCR(folder)
-        shrink_JPG(folder, object_file)
-        replace_obj_with_jp2(folder, object_file)
+        make_JP2(folder)
+        make_JPG(folder)
+        make_TN(folder)
+        make_OCR(folder)
+
+        replace_obj_with_jp2(folder)
         make_fits(folder, fits_path)
+        shrink_PDF(folder)
 
 
 if __name__ == '__main__':
