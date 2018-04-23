@@ -52,6 +52,16 @@ def make_PDF(path, input_path):
     if not os.path.isfile(output_path):
         subprocess.call(arguments)
 
+def extract_text(path):
+    input_path = os.path.join(path, 'PDF.pdf')
+    output_path = os.path.join(path, 'OCR.txt')
+    short_output_path = os.path.join(path, 'OCR')
+    arguments = ['pdf2txt',
+                 -o,
+                 output_path,
+                 input_path]
+    if not os.path.isfile(output_path):
+        subprocess.call(arguments)    
 
 def make_OCR(path):
     input_path = os.path.join(path, 'JPG.jpg')
