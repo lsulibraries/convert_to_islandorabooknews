@@ -11,8 +11,24 @@ from lxml import etree as ET
 import make_book_derivs
 
 
-def update_structure_files(collection_folder):
-    for root, dirs, files in os.walk(collection_folder):
+def main(collection_sourcepath):
+    collection_sourcepath = os.path.realpath(collection_sourcepath)
+    parent_root, collection_name = os.path.split(collection_sourcepath)
+    collection_outputpath = os.path.join(parent_root, '{}-to-book'.format(collection_name))
+    os.makedirs(collection_outputpath, exist_ok=True)
+    update_structure_files(collection_sourcepath)
+    rename_folders_move_files(collection_sourcepath, collection_outputpath)
+    book_names = {os.path.splitext(i)[0] for i in os.listdir(collection_sourcepath)}
+    already_converted_books = {os.path.splitext(i)[0] for i in os.listdir(collection_outputpath)}
+    books_needing_converting = book_names - already_converted_books
+    fits_path = make_book_derivs.find_fits_package()
+    for book_name in sorted(books_needing_converting):
+        book_outputpath = os.path.join(collection_outputpath, book_name)
+        make_book_derivs.do_child_level(book_outputpath, fits_path)
+
+
+def update_structure_files(collection_sourcepath):
+    for root, dirs, files in os.walk(collection_sourcepath):
         if 'structure.cpd' in files:
             parent = os.path.split(root)[-1]
             new_etree = ET.Element("islandora_compound_object", title=parent)
@@ -23,7 +39,23 @@ def update_structure_files(collection_folder):
                 f.write(ET.tostring(new_etree, encoding="utf-8", xml_declaration=True, pretty_print=True))
 
 
-def parse_structure_files(parent_structure_file):
+def rename_folders_move_files(collection_sourcepath, collection_outputpath):
+    parent_orderedchildren_dict = parse_all_structure_files(collection_sourcepath)
+    loop_through_parents(parent_orderedchildren_dict, collection_sourcepath, collection_outputpath)
+
+
+def parse_all_structure_files(collection_sourcepath):
+    parent_orderedchildren_dict = dict()
+    for root, dirs, files in os.walk(collection_sourcepath):
+        for file in files:
+            if file == 'structure.xml':
+                structure_filepath = os.path.join(root, file)
+                parent, ordered_children = parse_structure_file(structure_filepath)
+                parent_orderedchildren_dict[parent] = ordered_children
+    return parent_orderedchildren_dict
+
+
+def parse_structure_file(parent_structure_file):
     ordered_pointers = []
     structure_etree = ET.parse(parent_structure_file).getroot()
     parent = structure_etree.get('title')
@@ -40,115 +72,55 @@ def parse_structure_files(parent_structure_file):
     return parent, ordered_pointers
 
 
-def parse_all_structure_files(directory):
-    parent_orderedchildren_dict = dict()
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file == 'structure.xml':
-                parent, ordered_children = parse_structure_files(os.path.join(root, file))
-                parent_orderedchildren_dict[parent] = ordered_children
-    return parent_orderedchildren_dict
+def loop_through_parents(parent_orderedchildren_dict, collection_sourcepath, collection_outputpath):
+    for parent_pointer, ordered_children_pointers in parent_orderedchildren_dict.items():
+        copy_parent_mods(collection_sourcepath, collection_outputpath, parent_pointer)
+        book_outputpath = os.path.join(collection_outputpath, parent_pointer)
+        original_parent_dir = os.path.join(collection_sourcepath, parent_pointer)
+        loop_through_children(ordered_children_pointers, original_parent_dir, book_outputpath)
 
 
-def doublecheck_1obj_and_1mods(child_dir):
-    for root, dirs, files in os.walk(child_dir):
-        if files and len(files) != 2:
-            print('expected 2 files in dir {}'.format(root))
-            break
-    else:
-        return True
+def copy_parent_mods(collection_sourcepath, collection_outputpath, parent_pointer):
+    original_parent_modspath = os.path.join(collection_sourcepath, parent_pointer, 'MODS.xml')
+    book_outputpath = os.path.join(collection_outputpath, parent_pointer)
+    book_modspath = os.path.join(book_outputpath, 'MODS.xml')
+    os.makedirs(book_outputpath, exist_ok=True)
+    shutil.copy2(original_parent_modspath, book_modspath)
 
 
-def move_parent_mods(source_dir, output_dir, parent_pointer):
-    output_parent_dir = os.path.join(output_dir, parent_pointer)
-    output_parent_modspath = os.path.join(output_parent_dir, 'MODS.xml')
-    original_parent_modspath = os.path.join(source_dir, parent_pointer, 'MODS.xml')
-    os.makedirs(output_parent_dir, exist_ok=True)
-    shutil.copy2(original_parent_modspath, output_parent_modspath)
-
-
-def move_child_mods(original_child_dir, converted_child_dir):
-    original_mods_path = os.path.join(original_child_dir, 'MODS.xml')
-    converted_mods_path = os.path.join(converted_child_dir, 'MODS.xml')
-    shutil.copy2(original_mods_path, converted_mods_path)
-
-
-def move_child_objs(original_child_dir, converted_child_dir):
-    for file in os.listdir(original_child_dir):
-        if 'OBJ' not in file:
-            continue
-        original_obj_path = os.path.join(original_child_dir, file)
-        converted_obj_path = os.path.join(converted_child_dir, file)
-        if not os.path.isfile(original_obj_path):
-            print('not obj file at {}'.format(original_obj_path))
-        shutil.copy2(original_obj_path, converted_obj_path)
-
-
-def loop_through_children(ordered_children_pointers, original_parent_dir, converted_parent_dir):
+def loop_through_children(ordered_children_pointers, original_parent_dir, book_outputpath):
     for num, child_pointer in enumerate(ordered_children_pointers):
         original_child_dir = os.path.join(original_parent_dir, child_pointer)
-        converted_child_dir = os.path.join(converted_parent_dir, str(num + 1))
-        os.makedirs(converted_child_dir, exist_ok=True)
-        move_child_mods(original_child_dir, converted_child_dir)
-        move_child_objs(original_child_dir, converted_child_dir)
-        doublecheck_1obj_and_1mods(converted_child_dir)
+        page_outputpath = os.path.join(book_outputpath, str(num + 1))
+        os.makedirs(page_outputpath, exist_ok=True)
+        copy_child_mods(original_child_dir, page_outputpath)
+        copy_child_objs(original_child_dir, page_outputpath)
 
 
-def loop_through_parents(parent_orderedchildren_dict, source_dir, output_dir):
-    for parent_pointer, ordered_children_pointers in parent_orderedchildren_dict.items():
-        move_parent_mods(source_dir, output_dir, parent_pointer)
-        converted_parent_dir = os.path.join(output_dir, parent_pointer)
-        original_parent_dir = os.path.join(source_dir, parent_pointer)
-        loop_through_children(ordered_children_pointers, original_parent_dir, converted_parent_dir)
+def copy_child_mods(original_child_dir, page_outputpath):
+    original_mods_path = os.path.join(original_child_dir, 'MODS.xml')
+    page_modspath = os.path.join(page_outputpath, 'MODS.xml')
+    shutil.copy2(original_mods_path, page_modspath)
 
 
-def rename_folders_move_files(source_dir, output_dir):
-    parent_orderedchildren_dict = parse_all_structure_files(source_dir)
-    loop_through_parents(parent_orderedchildren_dict, source_dir, output_dir)
-
-
-def find_all_jp2s(output_root):
-    all_output_images = []
-    for parent_folder in os.listdir(output_root):
-        parent_path = os.path.join(output_root, parent_folder)
-        if not os.path.isdir(parent_path):
-            continue
-        for file in os.listdir(parent_path):
-            child_filepath = os.path.join(parent_path, file)
-            if not os.path.isfile(child_filepath):
-                continue
-            if os.path.splitext(child_filepath)[1] == '.jp2':
-                all_output_images.append(child_filepath)
-    return all_output_images
-
-
-def make_derivatives(source_root, output_root):
-    pointers = {os.path.splitext(i)[0] for i in os.listdir(source_root)}
-    fits_path = make_book_derivs.find_fits_package()
-    for pointer in pointers:
-        parent_root = os.path.join(output_root, pointer)
-        make_book_derivs.do_child_level(parent_root, fits_path)
-
-
-def main(source_root):
-    source_root = os.path.realpath(source_root)
-    parent_root, source_folder = os.path.split(source_root)
-    output_root = os.path.join(parent_root, '{}-to-book'.format(source_folder))
-    update_structure_files(source_root)
-    rename_folders_move_files(source_root, output_root)
-    make_derivatives(source_root, output_root)
+def copy_child_objs(original_child_dir, page_outputpath):
+    original_obj_path = os.path.join(original_child_dir, 'OBJ.jp2')
+    page_objpath = os.path.join(page_outputpath, 'OBJ.jp2')
+    if not os.path.isfile(original_obj_path):
+        print('not OBJ.jp2 file at {}'.format(original_obj_path))
+    shutil.copy2(original_obj_path, page_objpath)
 
 
 if __name__ == '__main__':
     try:
-        source_root = sys.argv[1]
+        collection_sourcepath = sys.argv[1]
     except IndexError:
         print('')
         print('Change to: "python convertJp2CpdToBook.py {{path_to_folder}}"')
         print('')
         exit()
-    if '-cpd' in source_root:
-        main(source_root)
+    if '-cpd' in collection_sourcepath:
+        main(collection_sourcepath)
     else:
         print('Expected "institution-namespace-cpd" folder name')
         print('No files processed')

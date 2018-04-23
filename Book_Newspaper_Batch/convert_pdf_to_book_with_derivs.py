@@ -17,8 +17,7 @@ def main(collection_sourcepath):
     already_converted_books = {os.path.splitext(i)[0] for i in os.listdir(collection_outputpath)}
     books_needing_converting = book_names - already_converted_books
     fits_path = make_book_derivs.find_fits_package()
-    for count, book_name in enumerate(sorted(books_needing_converting)):
-        print('{} books remaining'.format(len(books_needing_converting) - count))
+    for book_name in sorted(books_needing_converting):
         convert_an_item(book_name, collection_sourcepath, collection_outputpath)
         book_outputpath = os.path.join(collection_outputpath, book_name)
         make_book_derivs.do_child_level(book_outputpath, fits_path)
