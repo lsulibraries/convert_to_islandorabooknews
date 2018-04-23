@@ -89,7 +89,6 @@ def find_fits_package():
 
 
 def make_fits(root, fits_path):
-    print(fits_path)
     input_path = os.path.join(root, 'OBJ.jp2')
     output_path = os.path.join(root, 'TECHMD.xml')
     # Islanodora has a try expect block here
