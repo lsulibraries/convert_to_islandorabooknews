@@ -15,6 +15,8 @@ def make_JPG(path):
                  '-resize',
                  '600 x 800',
                  input_path,
+                 '-colorspace',
+                 'RGB',
                  output_path]
     subprocess.call(arguments)
 
@@ -166,5 +168,4 @@ if __name__ == '__main__':
                       for i in os.listdir(collection_path)
                       if os.path.isdir(os.path.join(collection_path, i))]
     for folder in sorted(parent_folders):
-        print(folder)
         do_child_level(folder, fits_path)

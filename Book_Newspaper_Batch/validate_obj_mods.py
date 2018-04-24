@@ -30,17 +30,19 @@ def sort_child_folders_by_contents(children_folders):
 def fix_bad_characters(path):
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read().encode('utf-8')
-    if b'\xc2\xa0' in text:
-        text = text.replace(b'\xc2\xa0', b'\x20')
+    new_text = bytearray([i for i in text if (i == 10 or i > 31)])
     with open(path, 'w', encoding='utf-8') as f:
-        f.write(text.decode('utf-8'))
+        f.write(new_text.decode('utf-8'))
 
 
 def validate_text_file(path):
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read()
         for num, char in enumerate(text):
-            if not char.replace('\b', '').replace('\n', '').replace('\t', '').strip().isprintable():
+            if char in ('\b', '\n', '\t', ' '):
+                continue
+            if not char.isprintable():
+                print(ord(char))
                 return False
     return True
 
@@ -64,6 +66,8 @@ def validate_image(path):
 
 
 def validate_mods(mods_filepath, MODS_SCHEMA):
+    if not os.path.isfile(mods_filepath):
+        return
     file_etree = ET.parse(mods_filepath)
     if not MODS_SCHEMA.validate(file_etree):
         print("{} post-xsl did not validate!!!!".format(mods_filepath))
@@ -71,8 +75,8 @@ def validate_mods(mods_filepath, MODS_SCHEMA):
     return True
 
 
-def validate_or_repair_or_complain_text_file(root, MODS_SCHEMA):
-    text_types = ['HOCR.html', 'MODS.xml', 'OCR.txt']
+def validate_or_repair_or_complain_text_file(root):
+    text_types = ['HOCR.html', 'OCR.txt']
     for text_type in text_types:
         path = os.path.join(root, text_type)
         if not os.path.isfile(path):
@@ -81,10 +85,7 @@ def validate_or_repair_or_complain_text_file(root, MODS_SCHEMA):
             fix_bad_characters(path)
             if not validate_text_file(path):
                 print(path, 'is not a valid textfile')
-        if text_type == 'MODS.xml':
-            if not validate_mods(path, MODS_SCHEMA):
-                print('Error:', path, 'does not validate as mods!')
-                exit()
+                # raise ValueError
 
 
 def validate_or_complain_image_files(root):
@@ -95,6 +96,7 @@ def validate_or_complain_image_files(root):
             continue
         if not validate_image(path):
             print(path, 'is not a valid image')
+            return False
 
 
 if __name__ == '__main__':
@@ -112,10 +114,13 @@ if __name__ == '__main__':
 
     children_folders = [root for root, dirs, files in os.walk(collection_path)
                         if os.path.split(os.path.split(root)[0])[1].isnumeric()]
+    parent_and_child_folders = [root for root, dirs, files in os.walk(collection_path)
+                                if os.path.split(root)[1].isnumeric()]
     derivs_dict = sort_child_folders_by_contents(children_folders)
+
     for k, v in derivs_dict.items():
         print(k, len(v))
-    for k, roots in derivs_dict.items():
-        for root in sorted(roots):
-            validate_or_repair_or_complain_text_file(root, MODS_SCHEMA)
-            validate_or_complain_image_files(root)
+    for root in sorted(parent_and_child_folders):
+        validate_or_repair_or_complain_text_file(root)
+        validate_mods(os.path.join(root, 'MODS.xml'), MODS_SCHEMA)
+        validate_or_complain_image_files(root)
