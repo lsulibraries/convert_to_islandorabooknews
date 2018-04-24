@@ -106,22 +106,27 @@ def make_fits(root, fits_path):
 def make_JP2(folder):
     input_path = os.path.join(folder, 'OBJ.tif')
     output_path = os.path.join(folder, 'JP2.jp2')
-    arguments = ["kdu_compress",
-                 "-i",
-                 input_path,
-                 "-o",
-                 output_path,
-                 "-rate",
-                 "0.5",
-                 "Clayers=1",
-                 "Clevels=7",
-                 "Cprecincts={256,256},{256,256},{256,256},{128,128},{128,128},{64,64},{64,64},{32,32},{16,16}",
-                 "Corder=RPCL",
-                 "ORGgen_plt=yes",
-                 "ORGtparts=R",
-                 "Cblk={32,32}",
-                 "Cuse_sop=yes"]
-    subprocess.call(arguments)
+    kakadu_arguments = ["kdu_compress",
+                        "-i",
+                        input_path,
+                        "-o",
+                        output_path,
+                        "-rate",
+                        "0.5",
+                        "Clayers=1",
+                        "Clevels=7",
+                        "Cprecincts={256,256},{256,256},{256,256},{128,128},{128,128},{64,64},{64,64},{32,32},{16,16}",
+                        "Corder=RPCL",
+                        "ORGgen_plt=yes",
+                        "ORGtparts=R",
+                        "Cblk={32,32}",
+                        "Cuse_sop=yes"]
+    error_message = subprocess.call(kakadu_arguments)
+    if error_message:
+        imagemagick_arguments = ['convert',
+                                 input_path,
+                                 output_path]
+        subprocess.call(imagemagick_arguments)
 
 
 def replace_obj_with_jp2(folder):
