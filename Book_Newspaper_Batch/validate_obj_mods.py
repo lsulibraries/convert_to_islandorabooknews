@@ -30,9 +30,9 @@ def sort_child_folders_by_contents(children_folders):
 def fix_bad_characters(path):
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read().encode('utf-8')
-    new_text = bytearray([i for i in text if (i == 10 or i > 31)])
+    new_text = bytearray([i for i in text if (i != 173) and (i == 10 or i > 31)])
     with open(path, 'w', encoding='utf-8') as f:
-        f.write(new_text.decode('utf-8'))
+        f.write(new_text.decode('utf-8', 'ignore'))
 
 
 def validate_text_file(path):
@@ -71,8 +71,6 @@ def validate_mods(mods_filepath, MODS_SCHEMA):
     file_etree = ET.parse(mods_filepath)
     if not MODS_SCHEMA.validate(file_etree):
         print("{} post-xsl did not validate!!!!".format(mods_filepath))
-        return False
-    return True
 
 
 def validate_or_repair_or_complain_text_file(root):
@@ -85,7 +83,6 @@ def validate_or_repair_or_complain_text_file(root):
             fix_bad_characters(path)
             if not validate_text_file(path):
                 print(path, 'is not a valid textfile')
-                # raise ValueError
 
 
 def validate_or_complain_image_files(root):
@@ -96,7 +93,6 @@ def validate_or_complain_image_files(root):
             continue
         if not validate_image(path):
             print(path, 'is not a valid image')
-            return False
 
 
 if __name__ == '__main__':
@@ -120,6 +116,10 @@ if __name__ == '__main__':
 
     for k, v in derivs_dict.items():
         print(k, len(v))
+        if len(k) < 8:
+            print('ERROR:  These paths have less than 8 derivs per page')
+            for path in v:
+                print(path)
     for root in sorted(parent_and_child_folders):
         validate_or_repair_or_complain_text_file(root)
         validate_mods(os.path.join(root, 'MODS.xml'), MODS_SCHEMA)
