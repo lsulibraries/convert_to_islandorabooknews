@@ -21,15 +21,20 @@ def main(collection_sourcepath):
         convert_an_item(book_name, collection_sourcepath, collection_outputpath)
         book_outputpath = os.path.join(collection_outputpath, book_name)
         make_book_derivs.do_child_level(book_outputpath, fits_path)
+    subprocess.call(['chmod', '-R', 'u+rwX,go+rX,go-w', collection_outputpath])
 
 
 def convert_an_item(book_name, collection_sourcepath, collection_outputpath):
     split_pdf_into_page_pdfs(book_name, collection_sourcepath, collection_outputpath)
     all_page_pdfs = find_page_files(collection_outputpath, 'pdf')
     move_children_to_subfolders(all_page_pdfs, 'pdf')
-    split_pdf_to_tiff(book_name, collection_sourcepath, collection_outputpath)
-    all_page_tifs = find_page_files(collection_outputpath, 'tif')
-    move_children_to_subfolders(all_page_tifs, 'tif')
+    book_outputpath = os.path.join(collection_outputpath, book_name)
+    page_folders = [os.path.join(book_outputpath, i)
+                    for i in os.listdir(book_outputpath)
+                    if os.path.isdir(os.path.join(book_outputpath, i))
+                    ]
+    for page_folder in sorted(page_folders):
+        convert_page_pdf_to_tif(page_folder)
     copy_mods_files(book_name, collection_sourcepath, collection_outputpath)
     move_parent_pdfs_to_subfolders(book_name, collection_sourcepath, collection_outputpath)
 
@@ -51,20 +56,15 @@ def split_pdf_into_page_pdfs(book_name, collection_sourcepath, collection_output
     os.remove(os.path.join(book_outputpath, 'doc_data.txt'))
 
 
-def split_pdf_to_tiff(book_name, collection_sourcepath, collection_outputpath):
-    filename = '{}.pdf'.format(book_name)
-    if filename not in os.listdir(collection_sourcepath):
-        print('Exiting:  expected {} in folder {}'.format(filename, collection_sourcepath))
-        exit()
-    book_outputpath = os.path.join(collection_outputpath, book_name)
-    os.makedirs(book_outputpath, exist_ok=True)
+def convert_page_pdf_to_tif(page_folder):
     arguments = ['convert',
                  '-density',
                  '300',
-                 os.path.join(collection_sourcepath, filename),
+                 os.path.join(page_folder, 'PDF.pdf'),
                  '-depth',
                  '8',
-                 os.path.join(book_outputpath, '%04d.tif')
+                 '-flatten',
+                 os.path.join(page_folder, 'OBJ.tif')
                  ]
     subprocess.call(arguments)
 
@@ -90,19 +90,9 @@ def move_children_to_subfolders(all_page_tifs, filetype):
     for source_path in all_page_tifs:
         root, filename = os.path.split(source_path)
         prefix, extension = os.path.splitext(filename)
-        # imagemagick-convert 0 indexes, while pdftk 1 indexes.  Magic Numbers to output with 1 index.
-        if filetype == 'tif':
-            magic_number = 1
-        elif filetype == 'pdf':
-            magic_number = 0
-        prefix_plus_one = str(int(prefix) + magic_number)
-        dest_path = os.path.join(root, prefix_plus_one)
+        dest_path = os.path.join(root, prefix)
         os.makedirs(dest_path, exist_ok=True)
-        if filetype == 'tif':
-            output_name = 'OBJ.tif'
-        elif filetype == 'pdf':
-            output_name = 'PDF.pdf'
-        shutil.move(source_path, os.path.join(dest_path, output_name))
+        shutil.move(source_path, os.path.join(dest_path, 'PDF.pdf'))
 
 
 def copy_mods_files(book_name, collection_sourcepath, collection_outputpath):

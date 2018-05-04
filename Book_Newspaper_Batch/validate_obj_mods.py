@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import string
 
 from jpylyzer import jpylyzer
 from PIL import Image
@@ -30,21 +31,28 @@ def sort_child_folders_by_contents(children_folders):
 def fix_bad_characters(path):
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read().encode('utf-8')
-    new_text = bytearray([i for i in text if (i != 173) and (i == 10 or i > 31)])
+    printable_codepoints = set([i for i in range(5000) if chr(i).isprintable()])
+    good_whitespace_codepoints = set([32, 9, 10, 11, 12, 13])
+    acceptable_codepoints = printable_codepoints.union(good_whitespace_codepoints)
+    new_text = bytearray([
+        i for i in text
+        if i in acceptable_codepoints])
     with open(path, 'w', encoding='utf-8') as f:
         f.write(new_text.decode('utf-8', 'ignore'))
 
 
-def validate_text_file(path):
+def has_invalid_characters(path):
+    invalid_characters = set()
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read()
         for num, char in enumerate(text):
             if char in ('\b', '\n', '\t', ' '):
                 continue
             if not char.isprintable():
-                print(ord(char))
-                return False
-    return True
+                invalid_characters.add(char)
+    if invalid_characters:
+        return invalid_characters
+    return None
 
 
 def validate_image(path):
@@ -79,10 +87,11 @@ def validate_or_repair_or_complain_text_file(root):
         path = os.path.join(root, text_type)
         if not os.path.isfile(path):
             continue
-        if not validate_text_file(path):
+        if has_invalid_characters(path):
             fix_bad_characters(path)
-            if not validate_text_file(path):
-                print(path, 'is not a valid textfile')
+            remaining_invalid_chars = has_invalid_characters(path)
+            if remaining_invalid_chars:
+                print('{} has invalid characters: ordinals {}'.format(path, remaining_invalid_chars))
 
 
 def validate_or_complain_image_files(root):
