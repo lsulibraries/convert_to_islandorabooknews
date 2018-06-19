@@ -1,10 +1,9 @@
 #! /usr/bin/env python3.6
 
-# Only works if imagemagick + jp2 delegates are active on the linux machine
-
 import os
 import sys
 import shutil
+import subprocess
 
 from lxml import etree as ET
 
@@ -16,15 +15,17 @@ def main(collection_sourcepath):
     parent_root, collection_name = os.path.split(collection_sourcepath)
     collection_outputpath = os.path.join(parent_root, '{}-to-book'.format(collection_name))
     os.makedirs(collection_outputpath, exist_ok=True)
-    update_structure_files(collection_sourcepath)
-    rename_folders_move_files(collection_sourcepath, collection_outputpath)
     book_names = {os.path.splitext(i)[0] for i in os.listdir(collection_sourcepath)}
     already_converted_books = {os.path.splitext(i)[0] for i in os.listdir(collection_outputpath)}
     books_needing_converting = book_names - already_converted_books
     fits_path = make_book_derivs.find_fits_package()
+    update_structure_files(collection_sourcepath)
+    rename_folders_move_files(collection_sourcepath, collection_outputpath)
     for book_name in sorted(books_needing_converting):
         book_outputpath = os.path.join(collection_outputpath, book_name)
         make_book_derivs.do_child_level(book_outputpath, fits_path)
+        make_parent_tn(book_outputpath)
+    subprocess.call(['chmod', '-R', 'u+rwX,go+rX,go-w', collection_outputpath])
 
 
 def update_structure_files(collection_sourcepath):
@@ -91,10 +92,10 @@ def copy_parent_mods(collection_sourcepath, collection_outputpath, parent_pointe
 def loop_through_children(ordered_children_pointers, original_parent_dir, book_outputpath):
     for num, child_pointer in enumerate(ordered_children_pointers):
         original_child_dir = os.path.join(original_parent_dir, child_pointer)
-        page_outputpath = os.path.join(book_outputpath, str(num + 1))
+        page_outputpath = os.path.join(book_outputpath, "{0:0=4d}".format(num + 1))
         os.makedirs(page_outputpath, exist_ok=True)
         copy_child_mods(original_child_dir, page_outputpath)
-        copy_child_objs(original_child_dir, page_outputpath)
+        decompress_child_objs(original_child_dir, page_outputpath)
 
 
 def copy_child_mods(original_child_dir, page_outputpath):
@@ -103,12 +104,22 @@ def copy_child_mods(original_child_dir, page_outputpath):
     shutil.copy2(original_mods_path, page_modspath)
 
 
-def copy_child_objs(original_child_dir, page_outputpath):
+def decompress_child_objs(original_child_dir, page_outputpath):
     original_obj_path = os.path.join(original_child_dir, 'OBJ.jp2')
-    page_objpath = os.path.join(page_outputpath, 'OBJ.jp2')
+    page_objpath = os.path.join(page_outputpath, 'OBJ.tif')
     if not os.path.isfile(original_obj_path):
-        print('not OBJ.jp2 file at {}'.format(original_obj_path))
-    shutil.copy2(original_obj_path, page_objpath)
+        print('no OBJ.jp2 file at {}'.format(original_obj_path))
+    arguments = ['convert',
+                 original_obj_path,
+                 'TIFF64:/{}'.format(page_objpath),
+                 ]
+    subprocess.call(arguments)
+
+
+def make_parent_tn(collection_outputpath):
+    first_page_tn = os.path.join(collection_outputpath, '0001', 'TN.jpg')
+    parent_tn = os.path.join(collection_outputpath, 'TN.jpg')
+    shutil.copy2(first_page_tn, parent_tn)
 
 
 if __name__ == '__main__':

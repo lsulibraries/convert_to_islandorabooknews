@@ -1,9 +1,9 @@
 #! /usr/bin/env python3.6
 
 import os
-import subprocess
-import shutil
 import sys
+import shutil
+import subprocess
 
 import make_book_derivs
 
@@ -21,6 +21,7 @@ def main(collection_sourcepath):
         convert_an_item(book_name, collection_sourcepath, collection_outputpath)
         book_outputpath = os.path.join(collection_outputpath, book_name)
         make_book_derivs.do_child_level(book_outputpath, fits_path)
+        make_parent_tn(book_outputpath)
     subprocess.call(['chmod', '-R', 'u+rwX,go+rX,go-w', collection_outputpath])
 
 
@@ -109,6 +110,12 @@ def move_parent_pdfs_to_subfolders(book_name, collection_sourcepath, collection_
     os.makedirs(book_outputpath, exist_ok=True)
     dest_filepath = os.path.join(book_outputpath, 'PDF.pdf')
     shutil.copy2(source_filepath, dest_filepath)
+
+
+def make_parent_tn(collection_outputpath):
+    first_page_tn = os.path.join(collection_outputpath, '0001', 'TN.jpg')
+    parent_tn = os.path.join(collection_outputpath, 'TN.jpg')
+    shutil.copy2(first_page_tn, parent_tn)
 
 
 if __name__ == '__main__':
