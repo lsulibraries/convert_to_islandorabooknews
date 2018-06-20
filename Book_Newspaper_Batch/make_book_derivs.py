@@ -58,6 +58,25 @@ def extract_text(path):
         subprocess.call(arguments)
 
 
+def make_PDF_if_not_one(path):
+    input_path = os.path.join(path, 'OBJ.tif')
+    output_path = os.path.join(path, 'PDF.pdf')
+    arguments = ['convert',
+                 input_path,
+                 output_path]
+    if not os.path.isfile(output_path):
+        subprocess.call(arguments)
+
+
+def make_OCR_from_tif(path):
+    input_path = os.path.join(path, 'OBJ.tif')
+    output_path = os.path.join(path, 'OCR')
+    arguments = ['tesseract',
+                 input_path,
+                 output_path]
+    subprocess.call(arguments)
+
+
 def make_OCR(path):
     input_path = os.path.join(path, 'PDF.pdf')
     output_path = os.path.join(path, 'OCR.txt')
@@ -65,6 +84,9 @@ def make_OCR(path):
                  input_path,
                  output_path]
     subprocess.call(arguments)
+    if os.path.getsize(output_path) < 10:
+        make_OCR_from_tif(path)
+        print(os.path.getsize(output_path))
 
 
 def make_HOCR(path):
@@ -139,20 +161,38 @@ def replace_obj_with_jp2(folder):
     shutil.copy2(jp2_file, new_object_file)
 
 
-def do_child_level(parent_root, fits_path):
+def make_book_level_thumbnail(page_folder):
+    collection_outputpath, page_num = os.path.split(page_folder)
+    if int(page_num) == 1:
+        first_page_tn = os.path.join(collection_outputpath, '0001', 'TN.jpg')
+        parent_tn = os.path.join(collection_outputpath, 'TN.jpg')
+        shutil.copy2(first_page_tn, parent_tn)
+
+
+def do_page_folder(folder, fits_path):
+    print(folder)
+    if not os.path.isfile(os.path.join(folder, 'OBJ.tif')):
+        print('page already done {}'.format(folder))
+        return
+    make_HOCR(folder)
+    make_JP2(folder)
+    make_JPG(folder)
+    make_TN(folder)
+    make_PDF_if_not_one(folder)
+    make_OCR(folder)
+
+    replace_obj_with_jp2(folder)
+    make_fits(folder, fits_path)
+    shrink_PDF(folder)
+    make_book_level_thumbnail(folder)
+
+
+def do_child_levels(parent_root, fits_path):
     child_folders = [os.path.join(parent_root, i)
                      for i in os.listdir(parent_root)
                      if os.path.isdir(os.path.join(parent_root, i))]
     for folder in sorted(child_folders):
-        make_HOCR(folder)
-        make_JP2(folder)
-        make_JPG(folder)
-        make_TN(folder)
-        make_OCR(folder)
-
-        replace_obj_with_jp2(folder)
-        make_fits(folder, fits_path)
-        shrink_PDF(folder)
+        do_page_folder(folder, fits_path)
 
 
 if __name__ == '__main__':
@@ -168,4 +208,4 @@ if __name__ == '__main__':
                       for i in os.listdir(collection_path)
                       if os.path.isdir(os.path.join(collection_path, i))]
     for folder in sorted(parent_folders):
-        do_child_level(folder, fits_path)
+        do_child_levels(folder, fits_path)

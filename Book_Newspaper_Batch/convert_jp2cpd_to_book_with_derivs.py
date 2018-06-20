@@ -10,21 +10,17 @@ from lxml import etree as ET
 import make_book_derivs
 
 
+FITS_PATH = make_book_derivs.find_fits_package()
+
+
 def main(collection_sourcepath):
     collection_sourcepath = os.path.realpath(collection_sourcepath)
     parent_root, collection_name = os.path.split(collection_sourcepath)
     collection_outputpath = os.path.join(parent_root, '{}-to-book'.format(collection_name))
     os.makedirs(collection_outputpath, exist_ok=True)
-    book_names = {os.path.splitext(i)[0] for i in os.listdir(collection_sourcepath)}
-    already_converted_books = {os.path.splitext(i)[0] for i in os.listdir(collection_outputpath)}
-    books_needing_converting = book_names - already_converted_books
-    fits_path = make_book_derivs.find_fits_package()
+
     update_structure_files(collection_sourcepath)
     rename_folders_move_files(collection_sourcepath, collection_outputpath)
-    for book_name in sorted(books_needing_converting):
-        book_outputpath = os.path.join(collection_outputpath, book_name)
-        make_book_derivs.do_child_level(book_outputpath, fits_path)
-        make_parent_tn(book_outputpath)
     subprocess.call(['chmod', '-R', 'u+rwX,go+rX,go-w', collection_outputpath])
 
 
@@ -96,6 +92,7 @@ def loop_through_children(ordered_children_pointers, original_parent_dir, book_o
         os.makedirs(page_outputpath, exist_ok=True)
         copy_child_mods(original_child_dir, page_outputpath)
         decompress_child_objs(original_child_dir, page_outputpath)
+        make_book_derivs.do_page_folder(page_outputpath, FITS_PATH)
 
 
 def copy_child_mods(original_child_dir, page_outputpath):
