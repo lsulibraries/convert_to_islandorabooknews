@@ -1,0 +1,24 @@
+Building the docker image
+
+# From inside the dora box:
+
+apt install wget zip software-properties-common -y
+add-apt-repository ppa:deadsnakes/ppa
+apt update
+apt install python3.6-dev python3.6-venv
+
+Starting scripts
+
+rm /usr/bin/python3
+ln -s /usr/bin/python3.6 /usr/bin/python3
+
+
+# Get the source institution-namespace-cpd.zip or institution-namespace-pdf.zip into the dora build.  (Scp, shared folder, or elsewise.)
+
+# Unzip the file to some folder.
+
+python3 convert_jp2cpd_to_book_with_derivs.py input/file/path/institution-namespace-cpd
+
+# or 
+
+python convert_pdf_to_book_with_derivs.py input/file/path/institution-namespace-pdf
