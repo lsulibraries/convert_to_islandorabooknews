@@ -70,7 +70,17 @@ def parse_structure_file(parent_structure_file):
 
 
 def loop_through_parents(parent_orderedchildren_dict, collection_sourcepath, collection_outputpath):
-    for parent_pointer, ordered_children_pointers in parent_orderedchildren_dict.items():
+
+    book_names = {os.path.splitext(i)[0] for i in os.listdir(collection_sourcepath)}
+    already_converted_books = {os.path.splitext(i)[0] for i in os.listdir(collection_outputpath)}
+    books_needing_converting = book_names - already_converted_books
+    print("collection total: {}\nto do: {},\ndone: {}\n".format(
+        len(book_names), len(books_needing_converting), len(already_converted_books))
+    )
+
+    for parent_pointer, ordered_children_pointers in sorted(parent_orderedchildren_dict.items()):
+        if parent_pointer not in books_needing_converting:
+            continue
         copy_parent_mods(collection_sourcepath, collection_outputpath, parent_pointer)
         book_outputpath = os.path.join(collection_outputpath, parent_pointer)
         original_parent_dir = os.path.join(collection_sourcepath, parent_pointer)
@@ -127,7 +137,7 @@ if __name__ == '__main__':
         print('Change to: "python convertJp2CpdToBook.py {{path_to_folder}}"')
         print('')
         exit()
-    if '-cpd' in collection_sourcepath:
+    if collection_sourcepath[-4:] in ('-cpd' or 'cpd/'):
         main(collection_sourcepath)
     else:
         print('Expected "institution-namespace-cpd" folder name')

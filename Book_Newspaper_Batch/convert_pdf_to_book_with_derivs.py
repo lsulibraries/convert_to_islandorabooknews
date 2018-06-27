@@ -8,6 +8,9 @@ import subprocess
 import make_book_derivs
 
 
+FITS_PATH = make_book_derivs.find_fits_package()
+
+
 def main(collection_sourcepath):
     collection_sourcepath = os.path.realpath(collection_sourcepath)
     parent_root, collection_name = os.path.split(collection_sourcepath)
@@ -20,7 +23,7 @@ def main(collection_sourcepath):
     for book_name in sorted(books_needing_converting):
         convert_an_item(book_name, collection_sourcepath, collection_outputpath)
         book_outputpath = os.path.join(collection_outputpath, book_name)
-        make_book_derivs.do_child_level(book_outputpath, fits_path)
+        make_book_derivs.do_child_levels(book_outputpath, fits_path)
         make_parent_tn(book_outputpath)
     subprocess.call(['chmod', '-R', 'u+rwX,go+rX,go-w', collection_outputpath])
 
