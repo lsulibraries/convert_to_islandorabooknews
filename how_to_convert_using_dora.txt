@@ -5,12 +5,13 @@ Building the docker image
 apt install wget zip software-properties-common -y
 add-apt-repository ppa:deadsnakes/ppa
 apt update
-apt install python3.6-dev python3.6-venv pdftk
+apt install python3.6-dev python3.6-venv pdftk build-essential libpoppler-cpp-dev pkg-config
 
 Starting scripts
 
 rm /usr/bin/python3
 ln -s /usr/bin/python3.6 /usr/bin/python3
+pip install pdftotext
 
 
 # Get the source institution-namespace-cpd.zip or institution-namespace-pdf.zip into the dora build.  (Scp, shared folder, or elsewise.)
