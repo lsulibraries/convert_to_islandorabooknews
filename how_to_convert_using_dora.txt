@@ -5,7 +5,7 @@ Building the docker image
 apt install wget zip software-properties-common -y
 add-apt-repository ppa:deadsnakes/ppa
 apt update
-apt install python3.6-dev python3.6-venv
+apt install python3.6-dev python3.6-venv pdftk
 
 Starting scripts
 
