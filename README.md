@@ -1,10 +1,10 @@
 # ingest_to_islandora_helpers
 
-Helper scripts for ingesting objects to islandora
+# Helper scripts for ingesting objects to islandora
 
-# For running within an Islandora vagrant box:
+## For running within an Islandora vagrant box:
 
-# From inside the dora box:
+## From inside the dora box:
 
 sudo apt install wget zip software-properties-common -y
 
@@ -16,8 +16,6 @@ sudo apt upgrade
 
 sudo apt install python3-pip python3.6-dev cython3 pdftk build-essential libpoppler-cpp-dev pkg-config libtiff4-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev tcl8.5-dev tk8.5-dev python-tk python-dev libxml2 libxml2-dev libxslt-dev libxml2
 
-Starting scripts
-
 rm /usr/bin/python3
 
 ln -s /usr/bin/python3.6 /usr/bin/python3
@@ -26,11 +24,11 @@ sudo pip3 install pdftotext jpylyzer Pillow lxml
 
 
 
-# Get the source institution-namespace-cpd.zip or institution-namespace-pdf.zip into the dora build.  (Scp, shared folder, or elsewise.)
+## Get the source institution-namespace-cpd.zip or institution-namespace-pdf.zip into the dora build.  (Scp, shared folder, or elsewise.)
 
 sudo scp my_outside_username@130.39.63.207:/home/my_outside_username/Desktop/inst-namespace-pdf.zip /tmp/
 
-# Unzip the file somewhere inside dora.
+## Unzip the file somewhere inside dora.
 
 mkdir inst-namespace-pdf
 
@@ -44,7 +42,7 @@ unzip inst-namespace-pdf-to-book.zip
 
 mv inst-namespace-pdf-to-book.zip ..
 
-# Convert a jp2 compound ingest package to a book/newspaper ingest package
+## Convert a jp2 compound ingest package to a book/newspaper ingest package
 
 cd /tmp
 
@@ -54,7 +52,7 @@ cd /tmp/ingest_to_islandora_helpers/Book_Newspaper_Batch/
 
 python3 convert_jp2cpd_to_book_with_derivs.py input/file/path/institution-namespace-cpd
 
-# or convert a pdf ingest package to a book/newspaper ingest package
+## or convert a pdf ingest package to a book/newspaper ingest package
 
 cd /tmp
 
@@ -66,17 +64,17 @@ python3 convert_pdf_to_book_with_derivs.py input/file/path/institution-namespace
 
 If the process breaks, you can delete the most recent folders & the script will skip the ones you've already made.  However, if any folders are partially made, it will skip them too -- so when in doubt, delete the output folders.
 
-# QA the output when done
+## QA the output when done
 
 sudo python3 validate_obj_mods.py {output_folder}
 
-# Remove all file restrictions & zip the folder
+## Remove all file restrictions & zip the folder
 
 sudo chmod -R u+rwX,go+rX,go-w {output_folder}
 
 zip -r -0 {/tmp/whatever_filename.zip} {output_folder}
 
-# Get the zip file out of dora onto your computer.  For example, from inside the dora, I used:
+## Get the zip file out of dora onto your computer.  For example, from inside the dora, I used:
 
 sudo scp /tmp/inst-namespace-pdf-to-book.zip my_outside_username@130.39.63.207:/home/my_outside_username/Desktop/ 
 
