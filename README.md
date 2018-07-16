@@ -30,13 +30,13 @@ mkdir inst-namespace-pdf
 
 sudo chown vagrant:vagrant inst-namespace-pdf.zip
 
-mv inst-namespace-pdf-to-book.zip inst-namespace-pdf-to-book/
+mv inst-namespace-pdf.zip inst-namespace-pdf/
 
-cd inst-namespace-pdf-to-book/
+cd inst-namespace-pdf/
 
-unzip inst-namespace-pdf-to-book.zip
+unzip inst-namespace-pdf.zip
 
-mv inst-namespace-pdf-to-book.zip ..
+mv inst-namespace-pdf.zip ..
 
 ## Convert a jp2 compound ingest package to a book/newspaper ingest package
 
@@ -56,7 +56,7 @@ git clone https://github.com/lsulibraries/ingest_to_islandora_helpers
 
 cd /tmp/ingest_to_islandora_helpers/Book_Newspaper_Batch/
 
-python3 convert_pdf_to_book_with_derivs.py input/file/path/institution-namespace-pdf
+python3 convert_pdf_to_book_with_derivs.py input/file/path/institution-namespace-pdf/
 
 If the process breaks, you can delete the most recent folders & the script will skip the ones you've already made.  However, if any folders are partially made, it will skip them too -- so when in doubt, delete the output folders.
 
