@@ -1,8 +1,4 @@
-# ingest_to_islandora_helpers
-
-# Helper scripts for ingesting objects to islandora
-
-## For running within an Islandora vagrant box:
+# For running within an Islandora vagrant box:
 
 ## From inside the dora box:
 
