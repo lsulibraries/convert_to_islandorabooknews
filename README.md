@@ -7,6 +7,8 @@ You can use the docker-compose box or the lsulibraries/dora box.  The docker ver
 
 The dora build is also a valid option, but it requires some additional setup (described below).  It is more heavyweight on your computer.
 
+## Using the docker-compose box:
+
 The workflow is this:
 
 - install docker and docker-compose, as described in the lsulibraries/gnatty github repo readme.
@@ -32,9 +34,9 @@ The workflow is this:
 - you may wish to validate them, using `docker-compose exec python3 validate_obj_mods.py /ingest_to_islandora_helpers/source_data/{namespace-collection-origname}-to-book/`
 
 
-# For running within an Islandora vagrant box:
+## Using a dora vagrant box:
 
-## From inside the dora box:
+- Add dependencies
 
 ```sudo apt install wget zip software-properties-common -y
 sudo add-apt-repository ppa:deadsnakes/ppa
@@ -46,11 +48,11 @@ ln -s /usr/bin/python3.6 /usr/bin/python3
 sudo pip3 install pdftotext jpylyzer Pillow lxml
 ```
 
-## Get the source institution-namespace-cpd.zip or institution-namespace-pdf.zip into the dora build.  (Scp, shared folder, or elsewise.)
+- Get the source institution-namespace-cpd.zip or institution-namespace-pdf.zip into the dora build.  (Scp, shared folder, or elsewise.)
 
 `sudo scp my_outside_username@130.39.63.207:/home/my_outside_username/Desktop/inst-namespace-pdf.zip /tmp/`
 
-## Unzip the file somewhere inside dora.
+- Unzip the file somewhere inside dora.
 
 ```mkdir inst-namespace-pdf
 sudo chown vagrant:vagrant inst-namespace-pdf.zip
@@ -60,7 +62,7 @@ unzip inst-namespace-pdf.zip
 mv inst-namespace-pdf.zip ..
 ```
 
-## Convert a jp2 compound ingest package to a book/newspaper ingest package
+- Convert a jp2cpd ingest package to a book/newspaper ingest package
 
 ```
 cd /tmp
@@ -69,7 +71,7 @@ cd /tmp/ingest_to_islandora_helpers/Book_Newspaper_Batch/
 python3 convert_jp2cpd_to_book_with_derivs.py input/file/path/institution-namespace-cpd
 ```
 
-## or convert a pdf ingest package to a book/newspaper ingest package
+- or convert a pdf ingest package to a book/newspaper ingest package
 
 ```
 cd /tmp
@@ -78,17 +80,17 @@ cd /tmp/ingest_to_islandora_helpers/Book_Newspaper_Batch/
 python3 convert_pdf_to_book_with_derivs.py input/file/path/institution-namespace-pdf/
 ```
 
-## QA the output when done
+- QA the output when done
 
 `sudo python3 validate_obj_mods.py {output_folder}`
 
-## Remove all file restrictions & zip the folder
+- Remove all file restrictions & zip the folder
 
 ```
 sudo chmod -R u+rwX,go+rX,go-w {output_folder}
 zip -r -0 {/tmp/whatever_filename.zip} {output_folder}
 ```
 
-## Get the zip file out of dora onto your computer.  For example, from inside the dora, I used:
+- Get the zip file out of dora onto your computer.  For example, from inside the dora, I used:
 
 `sudo scp /tmp/inst-namespace-pdf-to-book.zip my_outside_username@130.39.63.207:/home/my_outside_username/Desktop/ `
