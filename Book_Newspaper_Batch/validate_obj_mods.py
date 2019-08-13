@@ -1,3 +1,5 @@
+#! /usr/bin/env python3.6
+
 import os
 import sys
 import subprocess
@@ -109,7 +111,7 @@ if __name__ == '__main__':
         collection_path = sys.argv[1]
     except IndexError:
         print('')
-        print('Change to: "python validate_folder.py {{path_to_folder}}"')
+        print('Change to: "python3 validate_obj_mods.py {{path_to_folder}}"')
         print('')
         exit()
 

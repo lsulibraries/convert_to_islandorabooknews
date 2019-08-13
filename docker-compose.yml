@@ -2,9 +2,10 @@ version: '3.7'
 
 
 services:
-  book_newspaper_maker:
+  book_newspaper_box:
     build: .
-    container_name: book_newspaper_maker
+    container_name: book_newspaper_box
     volumes:
       - .:/ingest_to_islandora_helpers
     tty: true
+    working_dir: /ingest_to_islandora_helpers/Book_Newspaper_Batch
