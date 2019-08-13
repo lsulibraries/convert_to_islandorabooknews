@@ -1,0 +1,10 @@
+version: '3.7'
+
+
+services:
+  book_newspaper_maker:
+    build: .
+    container_name: book_newspaper_maker
+    volumes:
+      - .:/ingest_to_islandora_helpers
+    tty: true

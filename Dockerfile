@@ -2,6 +2,9 @@
 
 FROM ubuntu:14.04
 
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y \
@@ -56,3 +59,20 @@ RUN wget http://kakadusoftware.com/wp-content/uploads/2014/06/KDU7A2_Demo_Apps_f
     && mv KDU7A2_Demo_Apps_for_Centos7-x86-64_170827/* /usr/local/bin/ \
     && rm -R KDU7A2_Demo_Apps_for_Centos7-x86-64_170827/
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
+
+WORKDIR /required_libraries
+
+COPY ./required_libraries/jdk-7u80-linux-x64.tar.gz /required_libraries
+COPY ./required_libraries/fits-0.8.5.zip /required_libraries
+RUN unzip -u fits-0.8.5.zip
+RUN tar -xvf jdk-7u80-linux-x64.tar.gz \
+  && mkdir -p /usr/lib/jvm \
+  && mv ./jdk1.7.0_80 /usr/lib/jvm/ \
+  && update-alternatives --install "/usr/bin/java" "java" "/usr/lib/jvm/jdk1.7.0_80/bin/java" 1 \
+  && update-alternatives --install "/usr/bin/javac" "javac" "/usr/lib/jvm/jdk1.7.0_80/bin/javac" 1 \
+    && update-alternatives --install "/usr/bin/javaws" "javaws" "/usr/lib/jvm/jdk1.7.0_80/bin/javaws" 1 \
+    && chmod a+x /usr/bin/java \
+    && chmod a+x /usr/bin/javac \
+    && chmod a+x /usr/bin/javaws \
+    && chown -R root:root /usr/lib/jvm/jdk1.7.0_80
