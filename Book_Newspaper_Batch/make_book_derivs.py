@@ -4,6 +4,7 @@ import os
 import sys
 import subprocess
 import shutil
+import multiprocessing
 
 
 def make_JPG(path):
@@ -169,7 +170,7 @@ def make_book_level_thumbnail(page_folder):
         shutil.copy2(first_page_tn, parent_tn)
 
 
-def do_page_folder(folder, fits_path):
+def do_page_folder(folder, fits_path, results):
     print(folder)
     if not os.path.isfile(os.path.join(folder, 'OBJ.tif')):
         print('page already done {}'.format(folder))
@@ -191,8 +192,15 @@ def do_child_levels(parent_root, fits_path):
     child_folders = [os.path.join(parent_root, i)
                      for i in os.listdir(parent_root)
                      if os.path.isdir(os.path.join(parent_root, i))]
-    for folder in sorted(child_folders):
-        do_page_folder(folder, fits_path)
+    results = multiprocessing.Queue()
+    jobs = [
+        multiprocessing.Process(target=do_page_folder, args=(folder, fits_path, results))
+        for folder in sorted(child_folders)
+    ]
+    for i in jobs:
+        i.start()
+    for i in jobs:
+        i.join()
 
 
 if __name__ == '__main__':

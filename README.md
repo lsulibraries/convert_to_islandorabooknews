@@ -5,7 +5,7 @@ You can use the docker-compose box or the lsulibraries/dora box.  The docker ver
 - can use all your computer's CPU/RAM/disk space 
 - allows other programs to use the CPU/RAM/disk
 
-The dora build is also a valid option, but it requires some additional setup (described below).  It is more heavyweight on your computer.
+The dora build is also a valid option, but it requires some additional setup (described below).  Batch processing is very heavy on the harddisk and CPU; the docker approach makes available more disk/CPU.  It could save a day or more of processing for some collections.
 
 ## Using the docker-compose box:
 
@@ -15,31 +15,48 @@ The workflow is this:
 - from S://Departments/Digital Services/Internal/Installers/ 
 - copy jdk-7u80-linux-x64.tar.gz from the S drive, save it into the ./required_libraries/ folder
 - copy fits-0.8.5.zip from the S drive, save it into the ./required_libraries/ folder
-- copy your \*\-cpd.zip or \*\-pdf.zip file from the U drive, save it into the ./source_data/ folder.
+- copy your \*\-cpd.zip or \*\-pdf.zip file from the U drive, save it into the ./source_data/ folder, and unzip it.
 
-- this repo folder is shared inside the box as /ingest_to_islandora_helpers.  There's no need to enter the box.
+- There's no need to enter the box.  All commands are done from the host machine.
 
-- build the docker box with `docker-compose up --build -d`
+- build the docker box with:
+
+    - `docker-compose up --build -d`
+
 - convert a jp2cpd collection to a book/newspaper ingest format using:
-	- `docker-compose exec book_newspaper_box python3 convert_jp2cpd_to_book_with_derivs.py /ingest_to_islandora_helpers/source_data/{namespace-collection}-cpd.zip`
+
+    - `docker-compose exec book_newspaper_box python3 convert_jp2cpd_to_book_with_derivs.py /ingest_to_islandora_helpers/source_data/{namespace-collection}-cpd.zip`
+
 - convert a pdf collection to a book/newspaper ingest format using:
-	- `docker-compose exec book_newspaper_box python3 convert_pdf_to_book_with_derivs.py /ingest_to_islandora_helpers/source_data/{namespace-collection}-pdf.zip`
+
+    - `docker-compose exec book_newspaper_box python3 convert_pdf_to_book_with_derivs.py /ingest_to_islandora_helpers/source_data/{namespace-collection}-pdf.zip`
 
 - to see the logs:
-	- `docker-compose logs book_newspaper_box`
 
-- If the process breaks, you can delete the most recent folders & the script will skip the ones you've already made.  However, if any folders are partially made, it will skip them too -- so when in doubt, delete the output folders.
+    - `docker-compose logs book_newspaper_box`
 
-- when finished, the output files will be at ingest_to_islandora_helpers/source_data/{namespace-collection-origformat}-to-book/
 
-- you may wish to validate them, using `docker-compose exec python3 validate_obj_mods.py /ingest_to_islandora_helpers/source_data/{namespace-collection-origname}-to-book/`
+- If the process breaks
+
+    - delete the most recently created book item.
+    - the script will skip the books you've already made.
+    - However, if any book is partially made, it will skip them too and the book will be incomplete.  When in doubt, delete the book.
+
+- when finished
+
+    - find the output files at `./ingest_to_islandora_helpers/source_data/{namespace-collection-origformat}-to-book/`
+
+- validate them:
+
+    - `docker-compose exec python3 validate_obj_mods.py /ingest_to_islandora_helpers/source_data/{namespace-collection-origname}-to-book/`
 
 
 ## Using a dora vagrant box:
 
 - Add dependencies
 
-```sudo apt install wget zip software-properties-common -y
+```
+sudo apt install wget zip software-properties-common -y
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
 sudo apt upgrade
