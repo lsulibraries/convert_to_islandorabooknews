@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import subprocess
+import multiprocessing
 
 from lxml import etree as ET
 
@@ -70,7 +71,6 @@ def parse_structure_file(parent_structure_file):
 
 
 def loop_through_parents(parent_orderedchildren_dict, collection_sourcepath, collection_outputpath):
-
     book_names = {os.path.splitext(i)[0] for i in os.listdir(collection_sourcepath)}
     already_converted_books = {os.path.splitext(i)[0] for i in os.listdir(collection_outputpath)}
     books_needing_converting = book_names - already_converted_books
@@ -85,6 +85,7 @@ def loop_through_parents(parent_orderedchildren_dict, collection_sourcepath, col
         book_outputpath = os.path.join(collection_outputpath, parent_pointer)
         original_parent_dir = os.path.join(collection_sourcepath, parent_pointer)
         loop_through_children(ordered_children_pointers, original_parent_dir, book_outputpath)
+        make_book_derivs.do_child_levels(book_outputpath, FITS_PATH)
 
 
 def copy_parent_mods(collection_sourcepath, collection_outputpath, parent_pointer):
@@ -96,13 +97,23 @@ def copy_parent_mods(collection_sourcepath, collection_outputpath, parent_pointe
 
 
 def loop_through_children(ordered_children_pointers, original_parent_dir, book_outputpath):
-    for num, child_pointer in enumerate(ordered_children_pointers):
+    results = multiprocessing.Queue()
+    jobs = [
+        multiprocessing.Process(target=prep_child_obj_mods, args=(original_parent_dir, child_pointer, book_outputpath, num, results))
+        for num, child_pointer in enumerate(ordered_children_pointers)
+    ]
+    for i in jobs:
+        i.start()
+    for i in jobs:
+        i.join()
+
+
+def prep_child_obj_mods(original_parent_dir, child_pointer, book_outputpath, num, results):
         original_child_dir = os.path.join(original_parent_dir, child_pointer)
         page_outputpath = os.path.join(book_outputpath, "{0:0=4d}".format(num + 1))
         os.makedirs(page_outputpath, exist_ok=True)
         copy_child_mods(original_child_dir, page_outputpath)
         decompress_child_objs(original_child_dir, page_outputpath)
-        make_book_derivs.do_page_folder(page_outputpath, FITS_PATH)
 
 
 def copy_child_mods(original_child_dir, page_outputpath):

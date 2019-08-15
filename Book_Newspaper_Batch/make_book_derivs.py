@@ -170,7 +170,7 @@ def make_book_level_thumbnail(page_folder):
         shutil.copy2(first_page_tn, parent_tn)
 
 
-def do_page_folder(folder, fits_path, results):
+def do_page_folder(folder, fits_path, results=None):
     print(folder)
     if not os.path.isfile(os.path.join(folder, 'OBJ.tif')):
         print('page already done {}'.format(folder))
