@@ -12,8 +12,9 @@ The dora build is also a valid option, but it requires some additional setup (de
 The workflow is this:
 
 - install docker and docker-compose, as described in the lsulibraries/gnatty github repo readme.
-- copy jdk-7u80-linux-x64.tar.gz from the R drive, save it into the ./required_libraries/ folder
-- copy fits-0.8.5.zip from the R drive, save it into the ./required_libraries/ folder
+- from S://Departments/Digital Services/Internal/Installers/ 
+- copy jdk-7u80-linux-x64.tar.gz from the S drive, save it into the ./required_libraries/ folder
+- copy fits-0.8.5.zip from the S drive, save it into the ./required_libraries/ folder
 - copy your \*\-cpd.zip or \*\-pdf.zip file from the U drive, save it into the ./source_data/ folder.
 
 - this repo folder is shared inside the box as /ingest_to_islandora_helpers.  There's no need to enter the box.

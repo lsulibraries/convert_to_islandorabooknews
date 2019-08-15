@@ -36,9 +36,14 @@ RUN apt-get update \
         python-dev \
         libxml2-dev \
         libxslt-dev \
-        lib32z1-dev
+        lib32z1-dev \
+        tesseract-ocr \
+        poppler-utils
 
 WORKDIR /tmp
+
+# removing a security feature that prevent pdf creation
+RUN mv /etc/ImageMagick/policy.xml /etc/ImageMagick/policy.xmlold
 
 RUN wget https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tar.xz \
     && tar -xf Python-3.6.9.tar.xz \
@@ -65,7 +70,7 @@ WORKDIR /required_libraries
 
 COPY ./required_libraries/jdk-7u80-linux-x64.tar.gz /required_libraries
 COPY ./required_libraries/fits-0.8.5.zip /required_libraries
-RUN unzip -u fits-0.8.5.zip
+RUN unzip -u fits-0.8.5.zip && chmod +x /required_libraries/fits-0.8.5/fits.sh
 RUN tar -xvf jdk-7u80-linux-x64.tar.gz \
   && mkdir -p /usr/lib/jvm \
   && mv ./jdk1.7.0_80 /usr/lib/jvm/ \
