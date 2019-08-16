@@ -16,12 +16,11 @@ FITS_PATH = make_book_derivs.find_fits_package()
 
 def main(collection_sourcepath):
     collection_sourcepath = os.path.realpath(collection_sourcepath)
-    parent_root, collection_name = os.path.split(collection_sourcepath)
-    collection_outputpath = os.path.join(parent_root, '{}-to-book'.format(collection_name))
+    collection_root, collection_name = os.path.split(collection_sourcepath)
+    collection_outputpath = os.path.join(collection_root, '{}-to-book'.format(collection_name))
     os.makedirs(collection_outputpath, exist_ok=True)
-
     update_structure_files(collection_sourcepath)
-    rename_folders_move_files(collection_sourcepath, collection_outputpath)
+    process_collection(collection_sourcepath, collection_outputpath)
     subprocess.call(['chmod', '-R', 'u+rwX,go+rX,go-w', collection_outputpath])
 
 
@@ -37,20 +36,31 @@ def update_structure_files(collection_sourcepath):
                 f.write(ET.tostring(new_etree, encoding="utf-8", xml_declaration=True, pretty_print=True))
 
 
-def rename_folders_move_files(collection_sourcepath, collection_outputpath):
-    parent_orderedchildren_dict = parse_all_structure_files(collection_sourcepath)
-    loop_through_parents(parent_orderedchildren_dict, collection_sourcepath, collection_outputpath)
+def process_collection(collection_sourcepath, collection_outputpath):
+    book_orderedpages_dict = parse_all_structure_files(collection_sourcepath)
+    book_names = {os.path.splitext(i)[0] for i in os.listdir(collection_sourcepath)}
+    already_converted_books = {os.path.splitext(i)[0] for i in os.listdir(collection_outputpath)}
+    books_needing_converting = book_names - already_converted_books
+    print("collection total: {}\nto do: {},\ndone: {}\n".format(
+        len(book_names), len(books_needing_converting), len(already_converted_books))
+    )
+    loop_through_books(
+        book_orderedpages_dict,
+        collection_sourcepath,
+        collection_outputpath,
+        books_needing_converting
+    )
 
 
 def parse_all_structure_files(collection_sourcepath):
-    parent_orderedchildren_dict = dict()
+    book_orderedpages_dict = dict()
     for root, dirs, files in os.walk(collection_sourcepath):
         for file in files:
             if file == 'structure.xml':
                 structure_filepath = os.path.join(root, file)
-                parent, ordered_children = parse_structure_file(structure_filepath)
-                parent_orderedchildren_dict[parent] = ordered_children
-    return parent_orderedchildren_dict
+                book, ordered_pages = parse_structure_file(structure_filepath)
+                book_orderedpages_dict[book] = ordered_pages
+    return book_orderedpages_dict
 
 
 def parse_structure_file(parent_structure_file):
@@ -70,60 +80,61 @@ def parse_structure_file(parent_structure_file):
     return parent, ordered_pointers
 
 
-def loop_through_parents(parent_orderedchildren_dict, collection_sourcepath, collection_outputpath):
-    book_names = {os.path.splitext(i)[0] for i in os.listdir(collection_sourcepath)}
-    already_converted_books = {os.path.splitext(i)[0] for i in os.listdir(collection_outputpath)}
-    books_needing_converting = book_names - already_converted_books
-    print("collection total: {}\nto do: {},\ndone: {}\n".format(
-        len(book_names), len(books_needing_converting), len(already_converted_books))
-    )
-
-    for parent_pointer, ordered_children_pointers in sorted(parent_orderedchildren_dict.items()):
-        if parent_pointer not in books_needing_converting:
+def loop_through_books(book_orderedpages_dict, collection_sourcepath, collection_outputpath, books_needing_converting):
+    for book_pointer, ordered_pages_pointers in sorted(book_orderedpages_dict.items()):
+        if book_pointer not in books_needing_converting:
             continue
-        copy_parent_mods(collection_sourcepath, collection_outputpath, parent_pointer)
-        book_outputpath = os.path.join(collection_outputpath, parent_pointer)
-        original_parent_dir = os.path.join(collection_sourcepath, parent_pointer)
-        loop_through_children(ordered_children_pointers, original_parent_dir, book_outputpath)
-        make_book_derivs.do_child_levels(book_outputpath, FITS_PATH)
+        convert_a_book(
+            book_pointer,
+            ordered_pages_pointers,
+            collection_sourcepath,
+            collection_outputpath
+        )
 
 
-def copy_parent_mods(collection_sourcepath, collection_outputpath, parent_pointer):
-    original_parent_modspath = os.path.join(collection_sourcepath, parent_pointer, 'MODS.xml')
-    book_outputpath = os.path.join(collection_outputpath, parent_pointer)
+def convert_a_book(book_pointer, ordered_pages_pointers, collection_sourcepath, collection_outputpath):
+    copy_book_mods(collection_sourcepath, collection_outputpath, book_pointer)
+    original_book_dir = os.path.join(collection_sourcepath, book_pointer)
+    book_outputpath = os.path.join(collection_outputpath, book_pointer)
+    loop_through_pages(ordered_pages_pointers, original_book_dir, book_outputpath)
+    make_book_derivs.do_page_levels(book_outputpath, FITS_PATH)
+
+
+def copy_book_mods(collection_sourcepath, collection_outputpath, book_pointer):
+    original_book_modspath = os.path.join(collection_sourcepath, book_pointer, 'MODS.xml')
+    book_outputpath = os.path.join(collection_outputpath, book_pointer)
     book_modspath = os.path.join(book_outputpath, 'MODS.xml')
     os.makedirs(book_outputpath, exist_ok=True)
-    shutil.copy2(original_parent_modspath, book_modspath)
+    shutil.copy2(original_book_modspath, book_modspath)
 
 
-def loop_through_children(ordered_children_pointers, original_parent_dir, book_outputpath):
-    results = multiprocessing.Queue()
-    jobs = [
-        multiprocessing.Process(target=prep_child_obj_mods, args=(original_parent_dir, child_pointer, book_outputpath, num, results))
-        for num, child_pointer in enumerate(ordered_children_pointers)
+def loop_through_pages(ordered_pages_pointers, original_book_dir, book_outputpath):
+    cpus = multiprocessing.cpu_count()
+    args = [
+        (original_book_dir, page_pointer, book_outputpath, num)
+        for num, page_pointer in enumerate(ordered_pages_pointers)
     ]
-    for i in jobs:
-        i.start()
-    for i in jobs:
-        i.join()
+    with multiprocessing.Pool(cpus) as pool:
+        pool.map(prep_page, args)
 
 
-def prep_child_obj_mods(original_parent_dir, child_pointer, book_outputpath, num, results):
-        original_child_dir = os.path.join(original_parent_dir, child_pointer)
-        page_outputpath = os.path.join(book_outputpath, "{0:0=4d}".format(num + 1))
-        os.makedirs(page_outputpath, exist_ok=True)
-        copy_child_mods(original_child_dir, page_outputpath)
-        decompress_child_objs(original_child_dir, page_outputpath)
+def prep_page(args):
+    original_book_dir, page_pointer, book_outputpath, num = args
+    original_page_dir = os.path.join(original_book_dir, page_pointer)
+    page_outputpath = os.path.join(book_outputpath, "{0:0=4d}".format(num + 1))
+    os.makedirs(page_outputpath, exist_ok=True)
+    decompress_page_objs(original_page_dir, page_outputpath)
+    copy_page_mods(original_page_dir, page_outputpath)
 
 
-def copy_child_mods(original_child_dir, page_outputpath):
-    original_mods_path = os.path.join(original_child_dir, 'MODS.xml')
-    page_modspath = os.path.join(page_outputpath, 'MODS.xml')
-    shutil.copy2(original_mods_path, page_modspath)
+def copy_page_mods(original_page_dir, page_outputpath):
+    source_filepath = os.path.join(original_page_dir, 'MODS.xml')
+    dest_filepath = os.path.join(page_outputpath, 'MODS.xml')
+    shutil.copy2(source_filepath, dest_filepath)
 
 
-def decompress_child_objs(original_child_dir, page_outputpath):
-    original_obj_path = os.path.join(original_child_dir, 'OBJ.jp2')
+def decompress_page_objs(original_page_dir, page_outputpath):
+    original_obj_path = os.path.join(original_page_dir, 'OBJ.jp2')
     page_objpath = os.path.join(page_outputpath, 'OBJ.tif')
     if not os.path.isfile(original_obj_path):
         print('no OBJ.jp2 file at {}'.format(original_obj_path))
@@ -134,10 +145,10 @@ def decompress_child_objs(original_child_dir, page_outputpath):
     subprocess.call(arguments)
 
 
-def make_parent_tn(collection_outputpath):
-    first_page_tn = os.path.join(collection_outputpath, '0001', 'TN.jpg')
-    parent_tn = os.path.join(collection_outputpath, 'TN.jpg')
-    shutil.copy2(first_page_tn, parent_tn)
+# def make_book_tn(collection_outputpath):
+#     first_page_tn = os.path.join(collection_outputpath, '0001', 'TN.jpg')
+#     book_tn = os.path.join(collection_outputpath, 'TN.jpg')
+#     shutil.copy2(first_page_tn, book_tn)
 
 
 if __name__ == '__main__':

@@ -87,7 +87,6 @@ def make_OCR(path):
     subprocess.call(arguments)
     if os.path.getsize(output_path) < 10:
         make_OCR_from_tif(path)
-        print(os.path.getsize(output_path))
 
 
 def make_HOCR(path):
@@ -170,8 +169,8 @@ def make_book_level_thumbnail(page_folder):
         shutil.copy2(first_page_tn, parent_tn)
 
 
-def do_page_folder(folder, fits_path, results=None):
-    print(folder)
+def do_page_folder(args):
+    folder, fits_path = args
     if not os.path.isfile(os.path.join(folder, 'OBJ.tif')):
         print('page already done {}'.format(folder))
         return
@@ -188,19 +187,16 @@ def do_page_folder(folder, fits_path, results=None):
     make_book_level_thumbnail(folder)
 
 
-def do_child_levels(parent_root, fits_path):
-    child_folders = [os.path.join(parent_root, i)
-                     for i in os.listdir(parent_root)
-                     if os.path.isdir(os.path.join(parent_root, i))]
-    results = multiprocessing.Queue()
-    jobs = [
-        multiprocessing.Process(target=do_page_folder, args=(folder, fits_path, results))
-        for folder in sorted(child_folders)
+def do_page_levels(parent_root, fits_path):
+    child_folders = [
+        os.path.join(parent_root, i)
+        for i in os.listdir(parent_root)
+        if os.path.isdir(os.path.join(parent_root, i))
     ]
-    for i in jobs:
-        i.start()
-    for i in jobs:
-        i.join()
+    cpus = multiprocessing.cpu_count()
+    args = [(folder, fits_path) for folder in child_folders]
+    with multiprocessing.Pool(cpus) as pool:
+        pool.map(do_page_folder, args)
 
 
 if __name__ == '__main__':
@@ -216,4 +212,4 @@ if __name__ == '__main__':
                       for i in os.listdir(collection_path)
                       if os.path.isdir(os.path.join(collection_path, i))]
     for folder in sorted(parent_folders):
-        do_child_levels(folder, fits_path)
+        do_page_levels(folder, fits_path)
