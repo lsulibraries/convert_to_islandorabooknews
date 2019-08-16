@@ -47,11 +47,11 @@ def loop_through_books(collection_sourcepath, collection_outputpath, books_needi
 def convert_a_book(book_name, collection_sourcepath, collection_outputpath):
     split_pdf_into_page_pdfs(book_name, collection_sourcepath, collection_outputpath)
     all_page_pdfs = find_page_files(collection_outputpath, 'pdf')
-    move_pages_to_subfolders(all_page_pdfs, 'pdf')
+    move_pages_to_page_folders(all_page_pdfs, 'pdf')
     prep_page(book_name, collection_outputpath)
-    move_book_pdfs_to_subfolders(book_name, collection_sourcepath, collection_outputpath)
-    book_outputpath = os.path.join(collection_outputpath, book_name)
-    make_book_derivs.do_page_levels(book_outputpath, FITS_PATH)
+    move_book_pdf_to_book_folder(book_name, collection_sourcepath, collection_outputpath)
+    book_folder = os.path.join(collection_outputpath, book_name)
+    make_book_derivs.do_page_levels(book_folder)
 
 
 def split_pdf_into_page_pdfs(book_name, collection_sourcepath, collection_outputpath):
@@ -59,23 +59,49 @@ def split_pdf_into_page_pdfs(book_name, collection_sourcepath, collection_output
     if filename not in os.listdir(collection_sourcepath):
         print('Exiting:  expected {} in folder {}'.format(filename, collection_sourcepath))
         exit()
-    book_outputpath = os.path.join(collection_outputpath, book_name)
-    os.makedirs(book_outputpath, exist_ok=True)
+    book_folder = os.path.join(collection_outputpath, book_name)
+    os.makedirs(book_folder, exist_ok=True)
     arguments = ['pdftk',
                  os.path.join(collection_sourcepath, filename),
                  'burst',
                  'output',
-                 os.path.join(book_outputpath, '%04d.pdf')
+                 os.path.join(book_folder, '%04d.pdf')
                  ]
     subprocess.call(arguments)
-    os.remove(os.path.join(book_outputpath, 'doc_data.txt'))
+    os.remove(os.path.join(book_folder, 'doc_data.txt'))
+
+
+def find_page_files(collection_outputpath, filetype):
+    all_page_files = []
+    for book_name in os.listdir(collection_outputpath):
+        book_folder = os.path.join(collection_outputpath, book_name)
+        if not os.path.isdir(book_folder):
+            continue
+        for file in os.listdir(book_folder):
+            page_folder = os.path.join(book_folder, file)
+            if not os.path.isfile(page_folder):
+                continue
+            if file == 'PDF.pdf':
+                continue
+            if os.path.splitext(page_folder)[1].replace('.', '') == filetype:
+                all_page_files.append(page_folder)
+    return all_page_files
+
+
+def move_pages_to_page_folders(all_page_pdfs, filetype):
+    for source_path in all_page_pdfs:
+        root, filename = os.path.split(source_path)
+        page_num, extension = os.path.splitext(filename)
+        dest_path = os.path.join(root, page_num)
+        os.makedirs(dest_path, exist_ok=True)
+        shutil.move(source_path, os.path.join(dest_path, 'PDF.pdf'))
 
 
 def prep_page(book_name, collection_outputpath):
-    book_outputpath = os.path.join(collection_outputpath, book_name)
-    page_folders = [os.path.join(book_outputpath, i)
-                    for i in os.listdir(book_outputpath)
-                    if os.path.isdir(os.path.join(book_outputpath, i))
+    book_folder = os.path.join(collection_outputpath, book_name)
+    page_folders = [os.path.join(book_folder, i)
+                    for i in os.listdir(book_folder)
+                    if os.path.isdir(os.path.join(book_folder, i))
                     ]
     cpus = multiprocessing.cpu_count()
     with multiprocessing.Pool(cpus) as pool:
@@ -96,42 +122,16 @@ def convert_page_pdf_to_tif(page_folder):
     subprocess.call(arguments)
 
 
-def find_page_files(collection_outputpath, filetype):
-    all_page_files = []
-    for book_folder in os.listdir(collection_outputpath):
-        book_path = os.path.join(collection_outputpath, book_folder)
-        if not os.path.isdir(book_path):
-            continue
-        for file in os.listdir(book_path):
-            page_filepath = os.path.join(book_path, file)
-            if not os.path.isfile(page_filepath):
-                continue
-            if file == 'PDF.pdf':
-                continue
-            if os.path.splitext(page_filepath)[1].replace('.', '') == filetype:
-                all_page_files.append(page_filepath)
-    return all_page_files
-
-
-def move_pages_to_subfolders(all_page_pdfs, filetype):
-    for source_path in all_page_pdfs:
-        root, filename = os.path.split(source_path)
-        page_num, extension = os.path.splitext(filename)
-        dest_path = os.path.join(root, page_num)
-        os.makedirs(dest_path, exist_ok=True)
-        shutil.move(source_path, os.path.join(dest_path, 'PDF.pdf'))
-
-
 def copy_page_mods(book_name, collection_sourcepath, collection_outputpath):
     source_filepath = os.path.join(collection_sourcepath, '{}.xml'.format(book_name))
     dest_filepath = os.path.join(collection_outputpath, book_name, 'MODS.xml')
     shutil.copy2(source_filepath, dest_filepath)
 
 
-def move_book_pdfs_to_subfolders(book_name, collection_sourcepath, collection_outputpath):
+def move_book_pdf_to_book_folder(book_name, collection_sourcepath, collection_outputpath):
     source_filepath = os.path.join(collection_sourcepath, '{}.pdf'.format(book_name))
-    book_outputpath = os.path.join(collection_outputpath, book_name)
-    dest_filepath = os.path.join(book_outputpath, 'PDF.pdf')
+    book_folder = os.path.join(collection_outputpath, book_name)
+    dest_filepath = os.path.join(book_folder, 'PDF.pdf')
     shutil.copy2(source_filepath, dest_filepath)
 
 

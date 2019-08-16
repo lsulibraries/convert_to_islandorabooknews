@@ -112,13 +112,13 @@ def find_fits_package():
     return our_version[0]
 
 
-def make_fits(root, fits_path):
+def make_fits(root):
     input_path = os.path.join(root, 'OBJ.jp2')
     output_path = os.path.join(root, 'TECHMD.xml')
     # Islanodora has a try expect block here
     # with a ./fits.sh -i xxxxx -x -o xxxxx
     # fallback.
-    arguments = [fits_path,
+    arguments = [FITS_PATH,
                  '-i',
                  input_path,
                  '-xc',
@@ -156,21 +156,20 @@ def make_JP2(folder):
 def replace_obj_with_jp2(folder):
     orig_obj_file = os.path.join(folder, 'OBJ.tif')
     jp2_file = os.path.join(folder, 'JP2.jp2')
-    new_object_file = os.path.join(folder, 'OBJ.jp2')
+    new_obj_file = os.path.join(folder, 'OBJ.jp2')
     os.remove(orig_obj_file)
-    shutil.copy2(jp2_file, new_object_file)
+    shutil.copy2(jp2_file, new_obj_file)
 
 
 def make_book_level_thumbnail(page_folder):
     collection_outputpath, page_num = os.path.split(page_folder)
     if int(page_num) == 1:
         first_page_tn = os.path.join(collection_outputpath, '0001', 'TN.jpg')
-        parent_tn = os.path.join(collection_outputpath, 'TN.jpg')
-        shutil.copy2(first_page_tn, parent_tn)
+        book_tn = os.path.join(collection_outputpath, 'TN.jpg')
+        shutil.copy2(first_page_tn, book_tn)
 
 
-def do_page_folder(args):
-    folder, fits_path = args
+def do_page_folder(folder):
     if not os.path.isfile(os.path.join(folder, 'OBJ.tif')):
         print('page already done {}'.format(folder))
         return
@@ -180,24 +179,24 @@ def do_page_folder(args):
     make_TN(folder)
     make_PDF_if_not_one(folder)
     make_OCR(folder)
-
     replace_obj_with_jp2(folder)
-    make_fits(folder, fits_path)
+    make_fits(folder)
     shrink_PDF(folder)
     make_book_level_thumbnail(folder)
 
 
-def do_page_levels(parent_root, fits_path):
-    child_folders = [
-        os.path.join(parent_root, i)
-        for i in os.listdir(parent_root)
-        if os.path.isdir(os.path.join(parent_root, i))
+def do_page_levels(book_folder):
+    page_folders = [
+        os.path.join(book_folder, i)
+        for i in os.listdir(book_folder)
+        if os.path.isdir(os.path.join(book_folder, i))
     ]
     cpus = multiprocessing.cpu_count()
-    args = [(folder, fits_path) for folder in child_folders]
     with multiprocessing.Pool(cpus) as pool:
-        pool.map(do_page_folder, args)
+        pool.map(do_page_folder, page_folders)
 
+
+FITS_PATH = find_fits_package()
 
 if __name__ == '__main__':
     try:
@@ -207,9 +206,9 @@ if __name__ == '__main__':
         print('Change to: "python make_book_derivs.py {{ path_to_folder }}"')
         print('')
         exit()
-    fits_path = find_fits_package()
-    parent_folders = [os.path.join(collection_path, i)
+    
+    book_folders = [os.path.join(collection_path, i)
                       for i in os.listdir(collection_path)
                       if os.path.isdir(os.path.join(collection_path, i))]
-    for folder in sorted(parent_folders):
-        do_page_levels(folder, fits_path)
+    for folder in sorted(book_folders):
+        do_page_levels(folder)

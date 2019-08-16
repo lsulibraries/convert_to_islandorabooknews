@@ -81,37 +81,37 @@ def parse_structure_file(parent_structure_file):
 
 
 def loop_through_books(book_orderedpages_dict, collection_sourcepath, collection_outputpath, books_needing_converting):
-    for book_pointer, ordered_pages_pointers in sorted(book_orderedpages_dict.items()):
-        if book_pointer not in books_needing_converting:
+    for book_name, ordered_pages_pointers in sorted(book_orderedpages_dict.items()):
+        if book_name not in books_needing_converting:
             continue
         convert_a_book(
-            book_pointer,
+            book_name,
             ordered_pages_pointers,
             collection_sourcepath,
             collection_outputpath
         )
 
 
-def convert_a_book(book_pointer, ordered_pages_pointers, collection_sourcepath, collection_outputpath):
-    copy_book_mods(collection_sourcepath, collection_outputpath, book_pointer)
-    original_book_dir = os.path.join(collection_sourcepath, book_pointer)
-    book_outputpath = os.path.join(collection_outputpath, book_pointer)
-    loop_through_pages(ordered_pages_pointers, original_book_dir, book_outputpath)
-    make_book_derivs.do_page_levels(book_outputpath, FITS_PATH)
+def convert_a_book(book_name, ordered_pages_pointers, collection_sourcepath, collection_outputpath):
+    copy_book_mods(collection_sourcepath, collection_outputpath, book_name)
+    original_book_dir = os.path.join(collection_sourcepath, book_name)
+    book_folder = os.path.join(collection_outputpath, book_name)
+    loop_through_pages(ordered_pages_pointers, original_book_dir, book_folder)
+    make_book_derivs.do_page_levels(book_folder)
 
 
-def copy_book_mods(collection_sourcepath, collection_outputpath, book_pointer):
-    original_book_modspath = os.path.join(collection_sourcepath, book_pointer, 'MODS.xml')
-    book_outputpath = os.path.join(collection_outputpath, book_pointer)
-    book_modspath = os.path.join(book_outputpath, 'MODS.xml')
-    os.makedirs(book_outputpath, exist_ok=True)
+def copy_book_mods(collection_sourcepath, collection_outputpath, book_name):
+    original_book_modspath = os.path.join(collection_sourcepath, book_name, 'MODS.xml')
+    book_folder = os.path.join(collection_outputpath, book_name)
+    book_modspath = os.path.join(book_folder, 'MODS.xml')
+    os.makedirs(book_folder, exist_ok=True)
     shutil.copy2(original_book_modspath, book_modspath)
 
 
-def loop_through_pages(ordered_pages_pointers, original_book_dir, book_outputpath):
+def loop_through_pages(ordered_pages_pointers, original_book_dir, book_folder):
     cpus = multiprocessing.cpu_count()
     args = [
-        (original_book_dir, page_pointer, book_outputpath, num)
+        (original_book_dir, page_pointer, book_folder, num)
         for num, page_pointer in enumerate(ordered_pages_pointers)
     ]
     with multiprocessing.Pool(cpus) as pool:
@@ -119,18 +119,12 @@ def loop_through_pages(ordered_pages_pointers, original_book_dir, book_outputpat
 
 
 def prep_page(args):
-    original_book_dir, page_pointer, book_outputpath, num = args
+    original_book_dir, page_pointer, book_folder, num = args
     original_page_dir = os.path.join(original_book_dir, page_pointer)
-    page_outputpath = os.path.join(book_outputpath, "{0:0=4d}".format(num + 1))
+    page_outputpath = os.path.join(book_folder, "{0:0=4d}".format(num + 1))
     os.makedirs(page_outputpath, exist_ok=True)
     decompress_page_objs(original_page_dir, page_outputpath)
     copy_page_mods(original_page_dir, page_outputpath)
-
-
-def copy_page_mods(original_page_dir, page_outputpath):
-    source_filepath = os.path.join(original_page_dir, 'MODS.xml')
-    dest_filepath = os.path.join(page_outputpath, 'MODS.xml')
-    shutil.copy2(source_filepath, dest_filepath)
 
 
 def decompress_page_objs(original_page_dir, page_outputpath):
@@ -145,10 +139,11 @@ def decompress_page_objs(original_page_dir, page_outputpath):
     subprocess.call(arguments)
 
 
-# def make_book_tn(collection_outputpath):
-#     first_page_tn = os.path.join(collection_outputpath, '0001', 'TN.jpg')
-#     book_tn = os.path.join(collection_outputpath, 'TN.jpg')
-#     shutil.copy2(first_page_tn, book_tn)
+def copy_page_mods(original_page_dir, page_outputpath):
+    source_filepath = os.path.join(original_page_dir, 'MODS.xml')
+    dest_filepath = os.path.join(page_outputpath, 'MODS.xml')
+    shutil.copy2(source_filepath, dest_filepath)
+
 
 
 if __name__ == '__main__':
