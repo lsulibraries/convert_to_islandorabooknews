@@ -25,11 +25,11 @@ The workflow is this:
 
 - convert a jp2cpd collection to a book/newspaper ingest format using:
 
-    - `docker-compose exec book_newspaper_box python3 convert_jp2cpd_to_book_with_derivs.py /ingest_to_islandora_helpers/source_data/{namespace-collection}-cpd.zip`
+    - `docker-compose exec book_newspaper_box python3 convert_jp2cpd_to_book_with_derivs.py {institution-namespace-collection}-cpd`
 
 - convert a pdf collection to a book/newspaper ingest format using:
 
-    - `docker-compose exec book_newspaper_box python3 convert_pdf_to_book_with_derivs.py /ingest_to_islandora_helpers/source_data/{namespace-collection}-pdf.zip`
+    - `docker-compose exec book_newspaper_box python3 convert_pdf_to_book_with_derivs.py {institution-namespace-collection}-pdf.zip`
 
 - to see the logs:
 

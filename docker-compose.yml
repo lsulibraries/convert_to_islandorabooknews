@@ -6,6 +6,6 @@ services:
     build: .
     container_name: book_newspaper_box
     volumes:
-      - .:/ingest_to_islandora_helpers
+      - .:/code
     tty: true
-    working_dir: /ingest_to_islandora_helpers/Book_Newspaper_Batch
+    working_dir: /code/Book_Newspaper_Batch

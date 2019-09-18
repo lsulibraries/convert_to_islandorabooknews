@@ -148,15 +148,18 @@ def copy_page_mods(original_page_dir, page_outputpath):
 
 if __name__ == '__main__':
     try:
-        collection_sourcepath = sys.argv[1]
+        collection = sys.argv[1]
     except IndexError:
         print('')
-        print('Change to: "python convertJp2CpdToBook.py {{path_to_folder}}"')
+        print('Change to: "python convertJp2CpdToBook.py {{filename or foldername in "./source_data"}}"')
         print('')
         exit()
-    if collection_sourcepath[-4:] in ('-cpd' or 'cpd/'):
+    if collection[-4:] in ('-cpd' or 'cpd/'):
+        collection_sourcepath = os.path.join('/code/source_data', collection)
         main(collection_sourcepath)
     else:
-        print('Expected "institution-namespace-cpd" folder name')
+        print(os.getcwd())
+        print(f"looked for convert_to_islandorabooknews/source_data/{collection}")
+        print('couldnt find the source data.  doublecheck the path')
         print('No files processed')
         exit()
