@@ -31,11 +31,6 @@ The workflow is this:
 
     - `docker-compose exec book_newspaper_box python3 convert_pdf_to_book_with_derivs.py {institution-namespace-collection}-pdf.zip`
 
-- to see the logs:
-
-    - `docker-compose logs book_newspaper_box`
-
-
 - If the process breaks
 
     - delete the most recently created book item.
@@ -44,11 +39,11 @@ The workflow is this:
 
 - when finished
 
-    - find the output files at `./ingest_to_islandora_helpers/source_data/{namespace-collection-origformat}-to-book/`
+    - find the output files at `source_data/{namespace-collection-origformat}-to-book/`
 
 - validate them:
 
-    - `docker-compose exec python3 validate_obj_mods.py /ingest_to_islandora_helpers/source_data/{namespace-collection-origname}-to-book/`
+    - `docker-compose exec book_newspaper_box python3 validate_obj_mods.py source_data/{namespace-collection-origname}-to-book/`
 
 
 ## Using a dora vagrant box:

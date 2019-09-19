@@ -108,10 +108,11 @@ def validate_or_complain_image_files(root):
 
 if __name__ == '__main__':
     try:
-        collection_path = sys.argv[1]
+        collection = sys.argv[1]
+        collection_path = os.path.join('/code/source_data/', collection)
     except IndexError:
         print('')
-        print('Change to: "python3 validate_obj_mods.py {{path_to_folder}}"')
+        print('Change to: "python3 validate_obj_mods.py {{institution-namespace-collection}}-cpd-to-book"')
         print('')
         exit()
 
@@ -131,6 +132,7 @@ if __name__ == '__main__':
             print('ERROR:  These paths have less than 8 derivs per page')
             for path in v:
                 print(path)
+            print('ERROR:  Deriv generation did not complete.  Redo the derivs generation.')
     for root in sorted(parent_and_child_folders):
         validate_or_repair_or_complain_text_file(root)
         validate_mods(os.path.join(root, 'MODS.xml'), MODS_SCHEMA)
